@@ -7,11 +7,13 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { DocumentForm } from "@/components/forms/DocumentForm";
 
 export default function Documents() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     forms: 0,
@@ -77,7 +79,7 @@ export default function Documents() {
           <h1 className="text-2xl md:text-3xl font-bold">ডকুমেন্ট ব্যবস্থাপনা</h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">সকল গুরুত্বপূর্ণ ডকুমেন্ট ও ফাইল</p>
         </div>
-        <Button className="w-full sm:w-auto">
+        <Button className="w-full sm:w-auto" onClick={() => setIsFormOpen(true)}>
           <Upload className="w-4 h-4 mr-2" />
           নতুন ফাইল আপলোড করুন
         </Button>
@@ -173,6 +175,15 @@ export default function Documents() {
           ))
         )}
       </div>
+
+      <DocumentForm 
+        open={isFormOpen} 
+        onOpenChange={setIsFormOpen} 
+        onSuccess={() => {
+          fetchDocuments();
+          setIsFormOpen(false);
+        }} 
+      />
     </div>
   );
 }

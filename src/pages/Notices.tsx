@@ -6,10 +6,12 @@ import { Bell, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NoticeForm } from "@/components/forms/NoticeForm";
 
 export default function Notices() {
   const [notices, setNotices] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isFormOpen, setIsFormOpen] = useState(false);
   const [stats, setStats] = useState({
     total: 0,
     urgent: 0,
@@ -111,7 +113,7 @@ export default function Notices() {
           <h1 className="text-2xl md:text-3xl font-bold">নোটিশ ও বিজ্ঞপ্তি</h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">সকল গুরুত্বপূর্ণ নোটিশ দেখুন</p>
         </div>
-        <Button className="w-full sm:w-auto">
+        <Button className="w-full sm:w-auto" onClick={() => setIsFormOpen(true)}>
           <Plus className="w-4 h-4 mr-2" />
           নতুন নোটিশ যুক্ত করুন
         </Button>
@@ -196,6 +198,15 @@ export default function Notices() {
           ))
         )}
       </div>
+
+      <NoticeForm 
+        open={isFormOpen} 
+        onOpenChange={setIsFormOpen} 
+        onSuccess={() => {
+          fetchNotices();
+          setIsFormOpen(false);
+        }} 
+      />
     </div>
   );
 }

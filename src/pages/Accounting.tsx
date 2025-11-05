@@ -1,14 +1,17 @@
 import { useState } from "react";
 import { StatCard } from "@/components/StatCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { DollarSign, TrendingUp, TrendingDown, Wallet } from "lucide-react";
+import { DollarSign, TrendingUp, TrendingDown, Wallet, Plus } from "lucide-react";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useTransactions, useTransactionStats } from "@/hooks/useTransactions";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Button } from "@/components/ui/button";
+import { TransactionForm } from "@/components/forms/TransactionForm";
 
 export default function Accounting() {
   const [timeFilter, setTimeFilter] = useState("monthly");
-  const { data: transactions, isLoading } = useTransactions(timeFilter);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const { data: transactions, isLoading, refetch } = useTransactions(timeFilter);
   const stats = useTransactionStats(transactions);
 
   const formatCurrency = (amount: number) => {
@@ -43,17 +46,23 @@ export default function Accounting() {
           <h1 className="text-2xl md:text-3xl font-bold">হিসাব সারাংশ</h1>
           <p className="text-muted-foreground mt-1 text-sm md:text-base">আর্থিক ব্যবস্থাপনা ও বিশ্লেষণ</p>
         </div>
-        <Select value={timeFilter} onValueChange={setTimeFilter}>
-          <SelectTrigger className="w-full sm:w-[180px]">
-            <SelectValue placeholder="সময়কাল" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="daily">দৈনিক</SelectItem>
-            <SelectItem value="weekly">সাপ্তাহিক</SelectItem>
-            <SelectItem value="monthly">মাসিক</SelectItem>
-            <SelectItem value="yearly">বাৎসরিক</SelectItem>
-          </SelectContent>
-        </Select>
+        <div className="flex gap-2 flex-wrap">
+          <Button className="flex-1 sm:flex-none" onClick={() => setIsFormOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            নতুন লেনদেন
+          </Button>
+          <Select value={timeFilter} onValueChange={setTimeFilter}>
+            <SelectTrigger className="w-full sm:w-[180px]">
+              <SelectValue placeholder="সময়কাল" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="daily">দৈনিক</SelectItem>
+              <SelectItem value="weekly">সাপ্তাহিক</SelectItem>
+              <SelectItem value="monthly">মাসিক</SelectItem>
+              <SelectItem value="yearly">বাৎসরিক</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Financial Summary */}
@@ -192,6 +201,15 @@ export default function Accounting() {
           </div>
         </CardContent>
       </Card>
+
+      <TransactionForm 
+        open={isFormOpen} 
+        onOpenChange={setIsFormOpen} 
+        onSuccess={() => {
+          refetch();
+          setIsFormOpen(false);
+        }} 
+      />
     </div>
   );
 }
