@@ -8,6 +8,7 @@ import {
   FileText, 
   Bell,
   BookOpen,
+  Calendar,
   Settings
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
@@ -30,6 +31,7 @@ const menuItems = [
   { title: "ড্যাশবোর্ড", url: "/", icon: LayoutDashboard },
   { title: "ছাত্র ব্যবস্থাপনা", url: "/students", icon: GraduationCap },
   { title: "স্টাফ ব্যবস্থাপনা", url: "/staff", icon: Users },
+  { title: "উপস্থিতি", url: "/attendance", icon: Calendar },
   { title: "বাজার খরচ", url: "/expenses", icon: ShoppingCart },
   { title: "হিসাব সারাংশ", url: "/accounting", icon: Receipt },
   { title: "রিপোর্ট", url: "/reports", icon: FileText },

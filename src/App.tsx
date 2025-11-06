@@ -9,6 +9,7 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Staff from "./pages/Staff";
+import Attendance from "./pages/Attendance";
 import Expenses from "./pages/Expenses";
 import Accounting from "./pages/Accounting";
 import Reports from "./pages/Reports";
@@ -54,6 +55,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Staff />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/attendance"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Attendance />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
