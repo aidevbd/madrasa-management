@@ -167,6 +167,111 @@ export type Database = {
         }
         Relationships: []
       }
+      fee_payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          fee_structure_id: string
+          id: string
+          month: string | null
+          payment_date: string
+          payment_method: string | null
+          receipt_number: string | null
+          remarks: string | null
+          student_id: string
+          updated_at: string
+          year: number | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          fee_structure_id: string
+          id?: string
+          month?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          receipt_number?: string | null
+          remarks?: string | null
+          student_id: string
+          updated_at?: string
+          year?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          fee_structure_id?: string
+          id?: string
+          month?: string | null
+          payment_date?: string
+          payment_method?: string | null
+          receipt_number?: string | null
+          remarks?: string | null
+          student_id?: string
+          updated_at?: string
+          year?: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "fee_payments_fee_structure_id_fkey"
+            columns: ["fee_structure_id"]
+            isOneToOne: false
+            referencedRelation: "fee_structures"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "fee_payments_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      fee_structures: {
+        Row: {
+          amount: number
+          class_name: string | null
+          created_at: string
+          created_by: string | null
+          department: string | null
+          description: string | null
+          fee_type: string
+          frequency: string
+          id: string
+          is_active: boolean | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          class_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          fee_type: string
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          class_name?: string | null
+          created_at?: string
+          created_by?: string | null
+          department?: string | null
+          description?: string | null
+          fee_type?: string
+          frequency?: string
+          id?: string
+          is_active?: boolean | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notices: {
         Row: {
           attachment_url: string | null

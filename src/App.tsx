@@ -10,6 +10,7 @@ import Dashboard from "./pages/Dashboard";
 import Students from "./pages/Students";
 import Staff from "./pages/Staff";
 import Attendance from "./pages/Attendance";
+import Fees from "./pages/Fees";
 import Expenses from "./pages/Expenses";
 import Accounting from "./pages/Accounting";
 import Reports from "./pages/Reports";
@@ -65,6 +66,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Attendance />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/fees"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Fees />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

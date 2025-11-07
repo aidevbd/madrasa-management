@@ -32,6 +32,7 @@ const menuItems = [
   { title: "ছাত্র ব্যবস্থাপনা", url: "/students", icon: GraduationCap },
   { title: "স্টাফ ব্যবস্থাপনা", url: "/staff", icon: Users },
   { title: "উপস্থিতি", url: "/attendance", icon: Calendar },
+  { title: "ফি ব্যবস্থাপনা", url: "/fees", icon: Receipt },
   { title: "বাজার খরচ", url: "/expenses", icon: ShoppingCart },
   { title: "হিসাব সারাংশ", url: "/accounting", icon: Receipt },
   { title: "রিপোর্ট", url: "/reports", icon: FileText },
