@@ -9,7 +9,8 @@ import {
   Bell,
   BookOpen,
   Calendar,
-  Settings
+  Settings,
+  DollarSign
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -31,6 +32,7 @@ const menuItems = [
   { title: "ড্যাশবোর্ড", url: "/", icon: LayoutDashboard },
   { title: "ছাত্র ব্যবস্থাপনা", url: "/students", icon: GraduationCap },
   { title: "স্টাফ ব্যবস্থাপনা", url: "/staff", icon: Users },
+  { title: "বেতন ব্যবস্থাপনা", url: "/salaries", icon: DollarSign },
   { title: "উপস্থিতি", url: "/attendance", icon: Calendar },
   { title: "ফি ব্যবস্থাপনা", url: "/fees", icon: Receipt },
   { title: "বাজার খরচ", url: "/expenses", icon: ShoppingCart },
