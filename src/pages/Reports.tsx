@@ -2,16 +2,21 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Download, FileText, Printer } from "lucide-react";
+import { Download, FileText, Printer, TrendingUp, TrendingDown } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { LineChart, Line, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend } from "recharts";
+import { useReportsData } from "@/hooks/useReportsData";
+import { Skeleton } from "@/components/ui/skeleton";
 
 export default function Reports() {
   const [reportType, setReportType] = useState("");
   const [period, setPeriod] = useState("");
   const [format, setFormat] = useState("");
   const navigate = useNavigate();
+  const { data: reportsData, isLoading } = useReportsData();
 
   const generateReport = () => {
     if (!reportType || !period || !format) {
@@ -48,6 +53,204 @@ export default function Reports() {
           <p className="text-muted-foreground mt-1 text-sm md:text-base">বিভিন্ন ধরনের রিপোর্ট তৈরি করুন</p>
         </div>
       </div>
+
+      {/* Analytics Charts */}
+      {isLoading ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          <Skeleton className="h-[400px]" />
+          <Skeleton className="h-[400px]" />
+        </div>
+      ) : reportsData ? (
+        <div className="grid gap-4 lg:grid-cols-2">
+          {/* Monthly Trends */}
+          <Card>
+            <CardHeader>
+              <CardTitle>মাসিক আর্থিক প্রবণতা</CardTitle>
+              <CardDescription>গত ৬ মাসের আয়, ব্যয় ও নিট লাভ</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  income: {
+                    label: "আয়",
+                    color: "hsl(var(--success))",
+                  },
+                  expense: {
+                    label: "ব্যয়",
+                    color: "hsl(var(--destructive))",
+                  },
+                  net: {
+                    label: "নিট",
+                    color: "hsl(var(--primary))",
+                  },
+                }}
+                className="h-[300px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <LineChart data={reportsData.monthlyTrends}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="month" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="আয়" 
+                      stroke="hsl(var(--success))" 
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(var(--success))" }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="ব্যয়" 
+                      stroke="hsl(var(--destructive))" 
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(var(--destructive))" }}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="নিট" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={2}
+                      dot={{ fill: "hsl(var(--primary))" }}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Fee Collection Trends */}
+          <Card>
+            <CardHeader>
+              <CardTitle>ফি সংগ্রহের ধারা</CardTitle>
+              <CardDescription>গত ৬ মাসের ফি সংগ্রহ</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  amount: {
+                    label: "পরিমাণ",
+                    color: "hsl(var(--primary))",
+                  },
+                }}
+                className="h-[300px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={reportsData.feeCollection}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="month" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar 
+                      dataKey="amount" 
+                      fill="hsl(var(--primary))" 
+                      radius={[8, 8, 0, 0]}
+                      name="ফি সংগ্রহ"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Salary Payments Trends */}
+          <Card>
+            <CardHeader>
+              <CardTitle>বেতন প্রদানের ধারা</CardTitle>
+              <CardDescription>গত ৬ মাসের বেতন প্রদান</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <ChartContainer
+                config={{
+                  amount: {
+                    label: "পরিমাণ",
+                    color: "hsl(var(--accent))",
+                  },
+                }}
+                className="h-[300px]"
+              >
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={reportsData.salaryPayments}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                    <XAxis dataKey="month" className="text-xs" />
+                    <YAxis className="text-xs" />
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <Bar 
+                      dataKey="amount" 
+                      fill="hsl(var(--accent))" 
+                      radius={[8, 8, 0, 0]}
+                      name="বেতন প্রদান"
+                    />
+                  </BarChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </CardContent>
+          </Card>
+
+          {/* Financial Summary */}
+          <Card>
+            <CardHeader>
+              <CardTitle>আর্থিক সারাংশ</CardTitle>
+              <CardDescription>বর্তমান মাসের আর্থিক অবস্থা</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {reportsData.monthlyTrends.slice(-1).map((data, index) => {
+                  const netProfit = data.নিট;
+                  const isProfit = netProfit > 0;
+                  
+                  return (
+                    <div key={index} className="space-y-3">
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-success/10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-success flex items-center justify-center">
+                            <TrendingUp className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">মোট আয়</p>
+                            <p className="text-xl font-bold text-success">৳ {data.আয়.toLocaleString('bn-BD')}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 rounded-lg bg-destructive/10">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-full bg-destructive flex items-center justify-center">
+                            <TrendingDown className="w-5 h-5 text-white" />
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">মোট ব্যয়</p>
+                            <p className="text-xl font-bold text-destructive">৳ {data.ব্যয়.toLocaleString('bn-BD')}</p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className={`flex items-center justify-between p-4 rounded-lg ${isProfit ? 'bg-primary/10' : 'bg-warning/10'}`}>
+                        <div className="flex items-center gap-3">
+                          <div className={`w-10 h-10 rounded-full ${isProfit ? 'bg-primary' : 'bg-warning'} flex items-center justify-center`}>
+                            {isProfit ? (
+                              <TrendingUp className="w-5 h-5 text-white" />
+                            ) : (
+                              <TrendingDown className="w-5 h-5 text-white" />
+                            )}
+                          </div>
+                          <div>
+                            <p className="text-sm text-muted-foreground">নিট {isProfit ? 'লাভ' : 'ক্ষতি'}</p>
+                            <p className={`text-xl font-bold ${isProfit ? 'text-primary' : 'text-warning'}`}>
+                              ৳ {Math.abs(netProfit).toLocaleString('bn-BD')}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      ) : null}
 
       {/* Report Types */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">

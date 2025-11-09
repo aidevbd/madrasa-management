@@ -19,6 +19,8 @@ import { useNavigate } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { useStudents } from "@/hooks/useStudents";
 import { useExpenses } from "@/hooks/useExpenses";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, LineChart, Line } from "recharts";
 
 export default function Dashboard() {
   const { data: stats, isLoading } = useDashboardStats();
@@ -152,6 +154,99 @@ export default function Dashboard() {
           description="বাজার ও বেতন"
           variant="warning"
         />
+      </div>
+
+      {/* Charts Section */}
+      <div className="grid gap-4 lg:grid-cols-2">
+        {/* Student Distribution Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>বিভাগ অনুযায়ী ছাত্র বিতরণ</CardTitle>
+            <CardDescription>প্রতিটি বিভাগে ছাত্রদের সংখ্যা</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={{
+                maktab: {
+                  label: "মক্তব",
+                  color: "hsl(var(--primary))",
+                },
+                hifz: {
+                  label: "হিফজ",
+                  color: "hsl(var(--success))",
+                },
+                kitab: {
+                  label: "কিতাব",
+                  color: "hsl(var(--accent))",
+                },
+              }}
+              className="h-[300px]"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={[
+                      { name: "মক্তব", value: stats.students.maktab, fill: "hsl(var(--primary))" },
+                      { name: "হিফজ", value: stats.students.hifz, fill: "hsl(var(--success))" },
+                      { name: "কিতাব", value: stats.students.kitab, fill: "hsl(var(--accent))" },
+                    ]}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, value }) => `${name}: ${value}`}
+                    outerRadius={80}
+                    dataKey="value"
+                  >
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
+
+        {/* Income vs Expense Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle>আয় বনাম ব্যয়</CardTitle>
+            <CardDescription>চলতি মাসের আর্থিক পরিস্থিতি</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ChartContainer
+              config={{
+                income: {
+                  label: "আয়",
+                  color: "hsl(var(--success))",
+                },
+                expense: {
+                  label: "ব্যয়",
+                  color: "hsl(var(--destructive))",
+                },
+              }}
+              className="h-[300px]"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={[
+                    {
+                      name: "চলতি মাস",
+                      আয়: stats.finance.monthlyIncome,
+                      ব্যয়: stats.finance.monthlyExpense,
+                    },
+                  ]}
+                >
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis dataKey="name" className="text-xs" />
+                  <YAxis className="text-xs" />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <Legend />
+                  <Bar dataKey="আয়" fill="hsl(var(--success))" radius={[8, 8, 0, 0]} />
+                  <Bar dataKey="ব্যয়" fill="hsl(var(--destructive))" radius={[8, 8, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
+          </CardContent>
+        </Card>
       </div>
 
       {/* Department Overview */}
