@@ -10,7 +10,9 @@ import {
   BookOpen,
   Calendar,
   Settings,
-  DollarSign
+  DollarSign,
+  ClipboardList,
+  Clock
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -34,6 +36,8 @@ const menuItems = [
   { title: "স্টাফ ব্যবস্থাপনা", url: "/staff", icon: Users },
   { title: "বেতন ব্যবস্থাপনা", url: "/salaries", icon: DollarSign },
   { title: "উপস্থিতি", url: "/attendance", icon: Calendar },
+  { title: "পরীক্ষা ও ফলাফল", url: "/exams", icon: ClipboardList },
+  { title: "ক্লাস শিডিউল", url: "/timetable", icon: Clock },
   { title: "ফি ব্যবস্থাপনা", url: "/fees", icon: Receipt },
   { title: "বাজার খরচ", url: "/expenses", icon: ShoppingCart },
   { title: "হিসাব সারাংশ", url: "/accounting", icon: Receipt },
