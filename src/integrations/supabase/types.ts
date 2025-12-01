@@ -125,6 +125,117 @@ export type Database = {
         }
         Relationships: []
       }
+      exam_results: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          exam_id: string
+          grade: string | null
+          id: string
+          is_absent: boolean | null
+          marks_obtained: number
+          remarks: string | null
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          exam_id: string
+          grade?: string | null
+          id?: string
+          is_absent?: boolean | null
+          marks_obtained: number
+          remarks?: string | null
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          exam_id?: string
+          grade?: string | null
+          id?: string
+          is_absent?: boolean | null
+          marks_obtained?: number
+          remarks?: string | null
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "exam_results_exam_id_fkey"
+            columns: ["exam_id"]
+            isOneToOne: false
+            referencedRelation: "exams"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "exam_results_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      exams: {
+        Row: {
+          academic_year: number
+          class_name: string
+          created_at: string
+          created_by: string | null
+          department: string
+          end_time: string | null
+          exam_date: string
+          exam_name: string
+          exam_type: string
+          id: string
+          is_active: boolean | null
+          pass_marks: number
+          start_time: string | null
+          subject: string
+          total_marks: number
+          updated_at: string
+        }
+        Insert: {
+          academic_year?: number
+          class_name: string
+          created_at?: string
+          created_by?: string | null
+          department: string
+          end_time?: string | null
+          exam_date: string
+          exam_name: string
+          exam_type?: string
+          id?: string
+          is_active?: boolean | null
+          pass_marks?: number
+          start_time?: string | null
+          subject: string
+          total_marks?: number
+          updated_at?: string
+        }
+        Update: {
+          academic_year?: number
+          class_name?: string
+          created_at?: string
+          created_by?: string | null
+          department?: string
+          end_time?: string | null
+          exam_date?: string
+          exam_name?: string
+          exam_type?: string
+          id?: string
+          is_active?: boolean | null
+          pass_marks?: number
+          start_time?: string | null
+          subject?: string
+          total_marks?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       expenses: {
         Row: {
           amount: number
@@ -519,6 +630,62 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      timetables: {
+        Row: {
+          class_name: string
+          created_at: string
+          created_by: string | null
+          day_of_week: string
+          department: string
+          end_time: string
+          id: string
+          is_active: boolean | null
+          room_number: string | null
+          start_time: string
+          subject: string
+          teacher_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          class_name: string
+          created_at?: string
+          created_by?: string | null
+          day_of_week: string
+          department: string
+          end_time: string
+          id?: string
+          is_active?: boolean | null
+          room_number?: string | null
+          start_time: string
+          subject: string
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          class_name?: string
+          created_at?: string
+          created_by?: string | null
+          day_of_week?: string
+          department?: string
+          end_time?: string
+          id?: string
+          is_active?: boolean | null
+          room_number?: string | null
+          start_time?: string
+          subject?: string
+          teacher_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timetables_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       transactions: {
         Row: {

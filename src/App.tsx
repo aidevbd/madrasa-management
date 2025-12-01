@@ -17,6 +17,8 @@ import Accounting from "./pages/Accounting";
 import Reports from "./pages/Reports";
 import Notices from "./pages/Notices";
 import Documents from "./pages/Documents";
+import Exams from "./pages/Exams";
+import Timetable from "./pages/Timetable";
 import Auth from "./pages/Auth";
 import NotFound from "./pages/NotFound";
 
@@ -138,6 +140,22 @@ const App = () => (
                   <DashboardLayout>
                     <Documents />
                   </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/exams"
+              element={
+                <ProtectedRoute>
+                  <Exams />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/timetable"
+              element={
+                <ProtectedRoute>
+                  <Timetable />
                 </ProtectedRoute>
               }
             />
