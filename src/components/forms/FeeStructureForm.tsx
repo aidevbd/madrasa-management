@@ -58,6 +58,7 @@ export function FeeStructureForm({ feeStructure, onSuccess }: FeeStructureFormPr
     const data = {
       ...values,
       amount: parseFloat(values.amount),
+      department: values.department === 'all' ? null : values.department,
     };
 
     if (feeStructure) {
@@ -138,7 +139,7 @@ export function FeeStructureForm({ feeStructure, onSuccess }: FeeStructureFormPr
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">সকল বিভাগ</SelectItem>
+                  <SelectItem value="all">সকল বিভাগ</SelectItem>
                   {Constants.public.Enums.department_type.map((dept) => (
                     <SelectItem key={dept} value={dept}>
                       {dept}
