@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
 } from '@/components/ui/dialog';
@@ -115,9 +116,9 @@ const ExamResultsForm = ({ open, onOpenChange, exam, onSuccess }: ExamResultsFor
           <DialogTitle>
             ফলাফল প্রদান - {exam.exam_name} ({exam.subject})
           </DialogTitle>
-          <p className="text-sm text-muted-foreground">
+          <DialogDescription>
             {exam.department} - {exam.class_name} | পূর্ণমান: {exam.total_marks} | পাশ নম্বর: {exam.pass_marks}
-          </p>
+          </DialogDescription>
         </DialogHeader>
         
         <ScrollArea className="h-[60vh]">
