@@ -20,6 +20,7 @@ import Documents from "./pages/Documents";
 import Exams from "./pages/Exams";
 import Timetable from "./pages/Timetable";
 import Auth from "./pages/Auth";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -147,7 +148,9 @@ const App = () => (
               path="/exams"
               element={
                 <ProtectedRoute>
-                  <Exams />
+                  <DashboardLayout>
+                    <Exams />
+                  </DashboardLayout>
                 </ProtectedRoute>
               }
             />
@@ -155,7 +158,19 @@ const App = () => (
               path="/timetable"
               element={
                 <ProtectedRoute>
-                  <Timetable />
+                  <DashboardLayout>
+                    <Timetable />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/settings"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Settings />
+                  </DashboardLayout>
                 </ProtectedRoute>
               }
             />
