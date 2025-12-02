@@ -154,7 +154,7 @@ const Timetable = () => {
                   <SelectItem key={cls} value={cls}>{cls}</SelectItem>
                 ))
               ) : (
-                <SelectItem value="" disabled>কোনো শ্রেণী নেই</SelectItem>
+                <SelectItem value="none" disabled>কোনো শ্রেণী নেই</SelectItem>
               )}
             </SelectContent>
           </Select>

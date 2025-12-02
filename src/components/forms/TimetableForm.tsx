@@ -98,7 +98,7 @@ const TimetableForm = ({ open, onOpenChange, editingEntry, onSuccess }: Timetabl
       subject: data.subject,
       start_time: data.start_time,
       end_time: data.end_time,
-      teacher_id: data.teacher_id || undefined,
+      teacher_id: data.teacher_id && data.teacher_id !== 'unassigned' ? data.teacher_id : undefined,
       room_number: data.room_number || undefined,
       is_active: true,
     };
@@ -222,7 +222,7 @@ const TimetableForm = ({ open, onOpenChange, editingEntry, onSuccess }: Timetabl
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">নির্ধারিত নয়</SelectItem>
+                      <SelectItem value="unassigned">নির্ধারিত নয়</SelectItem>
                       {teachers.map(teacher => (
                         <SelectItem key={teacher.id} value={teacher.id}>
                           {teacher.name} ({teacher.designation})
