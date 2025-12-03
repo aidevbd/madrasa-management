@@ -19,6 +19,7 @@ import Notices from "./pages/Notices";
 import Documents from "./pages/Documents";
 import Exams from "./pages/Exams";
 import Timetable from "./pages/Timetable";
+import Events from "./pages/Events";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -160,6 +161,16 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Timetable />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/events"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Events />
                   </DashboardLayout>
                 </ProtectedRoute>
               }
