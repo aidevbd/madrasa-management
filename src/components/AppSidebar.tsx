@@ -12,7 +12,8 @@ import {
   Settings,
   DollarSign,
   ClipboardList,
-  Clock
+  Clock,
+  CalendarDays
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -38,6 +39,7 @@ const menuItems = [
   { title: "উপস্থিতি", url: "/attendance", icon: Calendar },
   { title: "পরীক্ষা ও ফলাফল", url: "/exams", icon: ClipboardList },
   { title: "ক্লাস শিডিউল", url: "/timetable", icon: Clock },
+  { title: "ইভেন্ট ক্যালেন্ডার", url: "/events", icon: CalendarDays },
   { title: "ফি ব্যবস্থাপনা", url: "/fees", icon: Receipt },
   { title: "বাজার খরচ", url: "/expenses", icon: ShoppingCart },
   { title: "হিসাব সারাংশ", url: "/accounting", icon: Receipt },
