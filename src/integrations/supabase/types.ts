@@ -434,6 +434,164 @@ export type Database = {
         }
         Relationships: []
       }
+      homework: {
+        Row: {
+          assigned_date: string
+          attachment_url: string | null
+          class_name: string
+          created_at: string
+          created_by: string | null
+          department: string
+          description: string | null
+          due_date: string
+          id: string
+          is_active: boolean | null
+          subject: string
+          teacher_id: string | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assigned_date?: string
+          attachment_url?: string | null
+          class_name: string
+          created_at?: string
+          created_by?: string | null
+          department: string
+          description?: string | null
+          due_date: string
+          id?: string
+          is_active?: boolean | null
+          subject: string
+          teacher_id?: string | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assigned_date?: string
+          attachment_url?: string | null
+          class_name?: string
+          created_at?: string
+          created_by?: string | null
+          department?: string
+          description?: string | null
+          due_date?: string
+          id?: string
+          is_active?: boolean | null
+          subject?: string
+          teacher_id?: string | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "homework_teacher_id_fkey"
+            columns: ["teacher_id"]
+            isOneToOne: false
+            referencedRelation: "staff"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_allocations: {
+        Row: {
+          allocation_date: string
+          created_at: string
+          created_by: string | null
+          end_date: string | null
+          id: string
+          monthly_fee: number
+          notes: string | null
+          room_id: string
+          status: string
+          student_id: string
+          updated_at: string
+        }
+        Insert: {
+          allocation_date?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          monthly_fee: number
+          notes?: string | null
+          room_id: string
+          status?: string
+          student_id: string
+          updated_at?: string
+        }
+        Update: {
+          allocation_date?: string
+          created_at?: string
+          created_by?: string | null
+          end_date?: string | null
+          id?: string
+          monthly_fee?: number
+          notes?: string | null
+          room_id?: string
+          status?: string
+          student_id?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "hostel_allocations_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "hostel_rooms"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "hostel_allocations_student_id_fkey"
+            columns: ["student_id"]
+            isOneToOne: false
+            referencedRelation: "students"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      hostel_rooms: {
+        Row: {
+          capacity: number
+          created_at: string
+          created_by: string | null
+          current_occupancy: number
+          description: string | null
+          id: string
+          is_active: boolean | null
+          monthly_fee: number
+          room_number: string
+          room_type: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          current_occupancy?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          monthly_fee?: number
+          room_number: string
+          room_type?: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number
+          created_at?: string
+          created_by?: string | null
+          current_occupancy?: number
+          description?: string | null
+          id?: string
+          is_active?: boolean | null
+          monthly_fee?: number
+          room_number?: string
+          room_type?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       notices: {
         Row: {
           attachment_url: string | null

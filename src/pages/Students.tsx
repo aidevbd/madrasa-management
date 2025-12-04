@@ -2,18 +2,26 @@ import { useState } from 'react';
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, Filter, Download } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Search, UserPlus, Filter, Download, Eye, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import { StudentForm } from "@/components/forms/StudentForm";
-import { useStudents } from "@/hooks/useStudents";
+import { useStudents, useDeleteStudent, Student } from "@/hooks/useStudents";
 import { Skeleton } from "@/components/ui/skeleton";
+import { format } from 'date-fns';
+import { bn } from 'date-fns/locale';
 
 export default function Students() {
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddForm, setShowAddForm] = useState(false);
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [viewingStudent, setViewingStudent] = useState<Student | null>(null);
   const { data: students, isLoading: loading, refetch } = useStudents();
+  const deleteStudent = useDeleteStudent();
 
   const stats = {
     total: students?.length || 0,
@@ -58,6 +66,21 @@ export default function Students() {
     toast.success('ডেটা এক্সপোর্ট সফল হয়েছে');
   };
 
+  const handleDelete = (id: string) => {
+    deleteStudent.mutate(id, {
+      onSuccess: () => {
+        toast.success('ছাত্র মুছে ফেলা হয়েছে');
+        refetch();
+      },
+      onError: () => toast.error('ছাত্র মুছতে সমস্যা হয়েছে')
+    });
+  };
+
+  const handleEdit = (student: Student) => {
+    setEditingStudent(student);
+    setShowAddForm(true);
+  };
+
   if (loading) {
     return (
       <div className="space-y-4 md:space-y-6">
@@ -78,7 +101,7 @@ export default function Students() {
           <p className="text-muted-foreground mt-1 text-sm md:text-base">সকল ছাত্রের তথ্য ও রেকর্ড</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button className="flex-1 sm:flex-none" onClick={() => setShowAddForm(true)}>
+          <Button className="flex-1 sm:flex-none" onClick={() => { setEditingStudent(null); setShowAddForm(true); }}>
             <UserPlus className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">নতুন ছাত্র যুক্ত করুন</span>
             <span className="sm:hidden">নতুন ছাত্র</span>
@@ -138,11 +161,7 @@ export default function Students() {
           </div>
         </CardHeader>
         <CardContent className="p-0 md:p-6">
-          {loading ? (
-            <div className="flex justify-center items-center p-12">
-              <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin"></div>
-            </div>
-          ) : filteredStudents.length === 0 ? (
+          {filteredStudents.length === 0 ? (
             <div className="text-center p-12 text-muted-foreground">
               {searchTerm ? 'কোন ছাত্র পাওয়া যায়নি' : 'এখনও কোন ছাত্র যুক্ত করা হয়নি'}
             </div>
@@ -177,8 +196,32 @@ export default function Students() {
                           {student.status}
                         </Badge>
                       </TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        <Button variant="ghost" size="sm">বিস্তারিত</Button>
+                      <TableCell className="text-right whitespace-nowrap space-x-1">
+                        <Button variant="ghost" size="sm" onClick={() => setViewingStudent(student)}>
+                          <Eye className="w-4 h-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={() => handleEdit(student)}>
+                          <Edit className="w-4 h-4" />
+                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="sm" className="text-destructive">
+                              <Trash2 className="w-4 h-4" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>ছাত্র মুছে ফেলুন?</AlertDialogTitle>
+                              <AlertDialogDescription>
+                                "{student.name}" কে মুছে ফেলা হবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => handleDelete(student.id)}>মুছুন</AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       </TableCell>
                     </TableRow>
                   ))}
@@ -189,13 +232,99 @@ export default function Students() {
         </CardContent>
       </Card>
 
+      {/* Student Detail Dialog */}
+      <Dialog open={!!viewingStudent} onOpenChange={() => setViewingStudent(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>ছাত্রের বিস্তারিত তথ্য</DialogTitle>
+            <DialogDescription>সম্পূর্ণ প্রোফাইল</DialogDescription>
+          </DialogHeader>
+          {viewingStudent && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                {viewingStudent.photo_url ? (
+                  <img src={viewingStudent.photo_url} alt={viewingStudent.name} className="w-24 h-24 rounded-lg object-cover" />
+                ) : (
+                  <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
+                    {viewingStudent.name.charAt(0)}
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-xl font-bold">{viewingStudent.name}</h3>
+                  <p className="text-muted-foreground">আইডি: {viewingStudent.student_id}</p>
+                  <Badge className="mt-2">{viewingStudent.status}</Badge>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">বিভাগ</Label>
+                  <p className="font-medium">{viewingStudent.department}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">শ্রেণি</Label>
+                  <p className="font-medium">{viewingStudent.class_name}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">পিতার নাম</Label>
+                  <p className="font-medium">{viewingStudent.father_name || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">মাতার নাম</Label>
+                  <p className="font-medium">{viewingStudent.mother_name || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">অভিভাবকের ফোন</Label>
+                  <p className="font-medium font-mono">{viewingStudent.guardian_phone}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">নিজের ফোন</Label>
+                  <p className="font-medium font-mono">{viewingStudent.phone || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">জন্ম তারিখ</Label>
+                  <p className="font-medium">
+                    {viewingStudent.date_of_birth ? format(new Date(viewingStudent.date_of_birth), 'dd MMM yyyy', { locale: bn }) : '-'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">ভর্তির তারিখ</Label>
+                  <p className="font-medium">
+                    {viewingStudent.admission_date ? format(new Date(viewingStudent.admission_date), 'dd MMM yyyy', { locale: bn }) : '-'}
+                  </p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground text-xs">ঠিকানা</Label>
+                  <p className="font-medium">{viewingStudent.address || '-'}</p>
+                </div>
+                {viewingStudent.notes && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground text-xs">নোট</Label>
+                    <p className="font-medium">{viewingStudent.notes}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => { setViewingStudent(null); handleEdit(viewingStudent); }}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  সম্পাদনা
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <StudentForm
         open={showAddForm}
-        onOpenChange={setShowAddForm}
+        onOpenChange={(open) => { setShowAddForm(open); if (!open) setEditingStudent(null); }}
         onSuccess={() => {
           refetch();
           setShowAddForm(false);
+          setEditingStudent(null);
         }}
+        editData={editingStudent}
       />
     </div>
   );
