@@ -13,7 +13,10 @@ import {
   DollarSign,
   ClipboardList,
   Clock,
-  CalendarDays
+  CalendarDays,
+  Home,
+  BookMarked,
+  UserCircle
 } from "lucide-react";
 import { NavLink, useLocation } from "react-router-dom";
 
@@ -39,13 +42,16 @@ const menuItems = [
   { title: "উপস্থিতি", url: "/attendance", icon: Calendar },
   { title: "পরীক্ষা ও ফলাফল", url: "/exams", icon: ClipboardList },
   { title: "ক্লাস শিডিউল", url: "/timetable", icon: Clock },
+  { title: "হোমওয়ার্ক", url: "/homework", icon: BookMarked },
   { title: "ইভেন্ট ক্যালেন্ডার", url: "/events", icon: CalendarDays },
+  { title: "হোস্টেল", url: "/hostel", icon: Home },
   { title: "ফি ব্যবস্থাপনা", url: "/fees", icon: Receipt },
   { title: "বাজার খরচ", url: "/expenses", icon: ShoppingCart },
   { title: "হিসাব সারাংশ", url: "/accounting", icon: Receipt },
   { title: "রিপোর্ট", url: "/reports", icon: FileText },
   { title: "নোটিশ", url: "/notices", icon: Bell },
   { title: "ডকুমেন্ট", url: "/documents", icon: BookOpen },
+  { title: "অভিভাবক পোর্টাল", url: "/parent-portal", icon: UserCircle },
 ];
 
 export function AppSidebar() {

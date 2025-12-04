@@ -2,19 +2,27 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, UserPlus, Filter, Download } from "lucide-react";
+import { Label } from "@/components/ui/label";
+import { Search, UserPlus, Filter, Download, Eye, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStaff, useStaffStats, Staff as StaffType } from "@/hooks/useStaff";
+import { useStaff, useStaffStats, useDeleteStaff, Staff as StaffType } from "@/hooks/useStaff";
 import { StaffForm } from "@/components/forms/StaffForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { format } from 'date-fns';
+import { bn } from 'date-fns/locale';
 
 export default function Staff() {
   const [searchTerm, setSearchTerm] = useState("");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingStaff, setEditingStaff] = useState<StaffType | null>(null);
+  const [viewingStaff, setViewingStaff] = useState<StaffType | null>(null);
   const { data: staff, isLoading, refetch } = useStaff();
+  const deleteStaff = useDeleteStaff();
   const stats = useStaffStats(staff);
 
   const formatCurrency = (amount: number | null) => {
@@ -74,6 +82,21 @@ export default function Staff() {
     toast.success('ডেটা এক্সপোর্ট সফল হয়েছে');
   };
 
+  const handleDelete = (id: string) => {
+    deleteStaff.mutate(id, {
+      onSuccess: () => {
+        toast.success('স্টাফ মুছে ফেলা হয়েছে');
+        refetch();
+      },
+      onError: () => toast.error('স্টাফ মুছতে সমস্যা হয়েছে')
+    });
+  };
+
+  const handleEdit = (staffMember: StaffType) => {
+    setEditingStaff(staffMember);
+    setIsFormOpen(true);
+  };
+
   const StaffTable = ({ data }: { data: StaffType[] }) => {
     if (data.length === 0) {
       return (
@@ -104,8 +127,32 @@ export default function Staff() {
                 <TableCell className="whitespace-nowrap hidden md:table-cell">{staffMember.designation}</TableCell>
                 <TableCell className="font-mono text-sm whitespace-nowrap hidden lg:table-cell">{staffMember.phone}</TableCell>
                 <TableCell className="font-semibold whitespace-nowrap hidden sm:table-cell">৳{formatCurrency(staffMember.salary)}</TableCell>
-                <TableCell className="text-right whitespace-nowrap">
-                  <Button variant="ghost" size="sm">বিস্তারিত</Button>
+                <TableCell className="text-right whitespace-nowrap space-x-1">
+                  <Button variant="ghost" size="sm" onClick={() => setViewingStaff(staffMember)}>
+                    <Eye className="w-4 h-4" />
+                  </Button>
+                  <Button variant="ghost" size="sm" onClick={() => handleEdit(staffMember)}>
+                    <Edit className="w-4 h-4" />
+                  </Button>
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button variant="ghost" size="sm" className="text-destructive">
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>স্টাফ মুছে ফেলুন?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                          "{staffMember.name}" কে মুছে ফেলা হবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।
+                        </AlertDialogDescription>
+                      </AlertDialogHeader>
+                      <AlertDialogFooter>
+                        <AlertDialogCancel>বাতিল</AlertDialogCancel>
+                        <AlertDialogAction onClick={() => handleDelete(staffMember.id)}>মুছুন</AlertDialogAction>
+                      </AlertDialogFooter>
+                    </AlertDialogContent>
+                  </AlertDialog>
                 </TableCell>
               </TableRow>
             ))}
@@ -137,7 +184,7 @@ export default function Staff() {
           <p className="text-muted-foreground mt-1 text-sm md:text-base">শিক্ষক ও কর্মচারীদের তথ্য</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button className="flex-1 sm:flex-none" onClick={() => setIsFormOpen(true)}>
+          <Button className="flex-1 sm:flex-none" onClick={() => { setEditingStaff(null); setIsFormOpen(true); }}>
             <UserPlus className="w-4 h-4 mr-2" />
             <span className="hidden sm:inline">নতুন স্টাফ যুক্ত করুন</span>
             <span className="sm:hidden">নতুন স্টাফ</span>
@@ -228,13 +275,90 @@ export default function Staff() {
         </TabsContent>
       </Tabs>
 
+      {/* Staff Detail Dialog */}
+      <Dialog open={!!viewingStaff} onOpenChange={() => setViewingStaff(null)}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>স্টাফের বিস্তারিত তথ্য</DialogTitle>
+            <DialogDescription>সম্পূর্ণ প্রোফাইল</DialogDescription>
+          </DialogHeader>
+          {viewingStaff && (
+            <div className="space-y-6">
+              <div className="flex items-start gap-4">
+                {viewingStaff.photo_url ? (
+                  <img src={viewingStaff.photo_url} alt={viewingStaff.name} className="w-24 h-24 rounded-lg object-cover" />
+                ) : (
+                  <div className="w-24 h-24 rounded-lg bg-muted flex items-center justify-center text-2xl font-bold text-muted-foreground">
+                    {viewingStaff.name.charAt(0)}
+                  </div>
+                )}
+                <div>
+                  <h3 className="text-xl font-bold">{viewingStaff.name}</h3>
+                  <p className="text-muted-foreground">{viewingStaff.designation}</p>
+                  <p className="text-sm text-muted-foreground">আইডি: {viewingStaff.staff_id}</p>
+                  <Badge className="mt-2">{viewingStaff.status}</Badge>
+                </div>
+              </div>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Label className="text-muted-foreground text-xs">মোবাইল</Label>
+                  <p className="font-medium font-mono">{viewingStaff.phone}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">ইমেইল</Label>
+                  <p className="font-medium">{viewingStaff.email || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">বেতন</Label>
+                  <p className="font-medium">৳{formatCurrency(viewingStaff.salary)}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">যোগদানের তারিখ</Label>
+                  <p className="font-medium">
+                    {viewingStaff.join_date ? format(new Date(viewingStaff.join_date), 'dd MMM yyyy', { locale: bn }) : '-'}
+                  </p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">এনআইডি</Label>
+                  <p className="font-medium font-mono">{viewingStaff.nid || '-'}</p>
+                </div>
+                <div>
+                  <Label className="text-muted-foreground text-xs">শিক্ষাগত যোগ্যতা</Label>
+                  <p className="font-medium">{viewingStaff.education || '-'}</p>
+                </div>
+                <div className="col-span-2">
+                  <Label className="text-muted-foreground text-xs">ঠিকানা</Label>
+                  <p className="font-medium">{viewingStaff.address || '-'}</p>
+                </div>
+                {viewingStaff.notes && (
+                  <div className="col-span-2">
+                    <Label className="text-muted-foreground text-xs">নোট</Label>
+                    <p className="font-medium">{viewingStaff.notes}</p>
+                  </div>
+                )}
+              </div>
+              
+              <div className="flex gap-2 justify-end">
+                <Button variant="outline" onClick={() => { setViewingStaff(null); handleEdit(viewingStaff); }}>
+                  <Edit className="w-4 h-4 mr-2" />
+                  সম্পাদনা
+                </Button>
+              </div>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
+
       <StaffForm 
         open={isFormOpen} 
-        onOpenChange={setIsFormOpen} 
+        onOpenChange={(open) => { setIsFormOpen(open); if (!open) setEditingStaff(null); }} 
         onSuccess={() => {
           refetch();
           setIsFormOpen(false);
-        }} 
+          setEditingStaff(null);
+        }}
+        editData={editingStaff}
       />
     </div>
   );
