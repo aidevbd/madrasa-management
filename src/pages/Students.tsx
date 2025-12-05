@@ -10,7 +10,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { toast } from 'sonner';
 import { StudentForm } from "@/components/forms/StudentForm";
-import { useStudents, useDeleteStudent, Student } from "@/hooks/useStudents";
+import { useStudents, useDeleteStudent, type Student } from "@/hooks/useStudents";
 import { Skeleton } from "@/components/ui/skeleton";
 import { format } from 'date-fns';
 import { bn } from 'date-fns/locale';

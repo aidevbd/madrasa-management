@@ -20,6 +20,9 @@ import Documents from "./pages/Documents";
 import Exams from "./pages/Exams";
 import Timetable from "./pages/Timetable";
 import Events from "./pages/Events";
+import Hostel from "./pages/Hostel";
+import Homework from "./pages/Homework";
+import ParentPortal from "./pages/ParentPortal";
 import Auth from "./pages/Auth";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
@@ -35,6 +38,7 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/parent-portal" element={<ParentPortal />} />
             <Route
               path="/"
               element={
@@ -171,6 +175,26 @@ const App = () => (
                 <ProtectedRoute>
                   <DashboardLayout>
                     <Events />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/hostel"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Hostel />
+                  </DashboardLayout>
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/homework"
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout>
+                    <Homework />
                   </DashboardLayout>
                 </ProtectedRoute>
               }

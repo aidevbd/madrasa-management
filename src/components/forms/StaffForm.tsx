@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { mapDatabaseError } from '@/lib/database-errors';
+import { Staff } from '@/hooks/useStaff';
 
 const staffSchema = z.object({
   staff_id: z.string().min(1, 'আইডি প্রয়োজন').max(50, 'আইডি সর্বোচ্চ ৫০ অক্ষরের হতে পারে'),
@@ -31,19 +32,40 @@ interface StaffFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  editData?: Staff | null;
 }
 
-export function StaffForm({ open, onOpenChange, onSuccess }: StaffFormProps) {
+export function StaffForm({ open, onOpenChange, onSuccess, editData }: StaffFormProps) {
   const [loading, setLoading] = useState(false);
+  const isEditing = !!editData;
 
   const {
     register,
     handleSubmit,
     formState: { errors },
     reset,
+    setValue,
   } = useForm<StaffFormData>({
     resolver: zodResolver(staffSchema),
   });
+
+  useEffect(() => {
+    if (editData) {
+      setValue('staff_id', editData.staff_id);
+      setValue('name', editData.name);
+      setValue('designation', editData.designation);
+      setValue('phone', editData.phone);
+      setValue('email', editData.email || '');
+      setValue('address', editData.address || '');
+      setValue('salary', editData.salary?.toString() || '');
+      setValue('join_date', editData.join_date || '');
+      setValue('nid', editData.nid || '');
+      setValue('education', editData.education || '');
+      setValue('notes', editData.notes || '');
+    } else {
+      reset();
+    }
+  }, [editData, setValue, reset]);
 
   const onSubmit = async (data: StaffFormData) => {
     setLoading(true);
@@ -55,7 +77,7 @@ export function StaffForm({ open, onOpenChange, onSuccess }: StaffFormProps) {
         return;
       }
 
-      const { error } = await supabase.from('staff').insert({
+      const staffData = {
         staff_id: data.staff_id,
         name: data.name,
         designation: data.designation,
@@ -67,12 +89,23 @@ export function StaffForm({ open, onOpenChange, onSuccess }: StaffFormProps) {
         nid: data.nid || null,
         education: data.education || null,
         notes: data.notes || null,
-        created_by: user.id,
-      });
+      };
 
-      if (error) throw error;
+      if (isEditing) {
+        const { error } = await supabase.from('staff')
+          .update(staffData)
+          .eq('id', editData.id);
+        if (error) throw error;
+        toast.success('স্টাফ তথ্য আপডেট হয়েছে');
+      } else {
+        const { error } = await supabase.from('staff').insert({
+          ...staffData,
+          created_by: user.id,
+        });
+        if (error) throw error;
+        toast.success('স্টাফ সফলভাবে যুক্ত হয়েছে');
+      }
 
-      toast.success('স্টাফ সফলভাবে যুক্ত হয়েছে');
       reset();
       onOpenChange(false);
       onSuccess();
@@ -87,7 +120,7 @@ export function StaffForm({ open, onOpenChange, onSuccess }: StaffFormProps) {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>নতুন স্টাফ যুক্ত করুন</DialogTitle>
+          <DialogTitle>{isEditing ? 'স্টাফ তথ্য সম্পাদনা' : 'নতুন স্টাফ যুক্ত করুন'}</DialogTitle>
           <DialogDescription>স্টাফের সকল তথ্য পূরণ করুন</DialogDescription>
         </DialogHeader>
 
@@ -95,7 +128,7 @@ export function StaffForm({ open, onOpenChange, onSuccess }: StaffFormProps) {
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="staff_id">স্টাফ আইডি *</Label>
-              <Input id="staff_id" {...register('staff_id')} placeholder="STF001" />
+              <Input id="staff_id" {...register('staff_id')} placeholder="STF001" disabled={isEditing} />
               {errors.staff_id && <p className="text-sm text-destructive">{errors.staff_id.message}</p>}
             </div>
 
@@ -165,7 +198,7 @@ export function StaffForm({ open, onOpenChange, onSuccess }: StaffFormProps) {
               বাতিল
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'যুক্ত হচ্ছে...' : 'যুক্ত করুন'}
+              {loading ? (isEditing ? 'আপডেট হচ্ছে...' : 'যুক্ত হচ্ছে...') : (isEditing ? 'আপডেট করুন' : 'যুক্ত করুন')}
             </Button>
           </div>
         </form>

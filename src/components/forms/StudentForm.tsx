@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { mapDatabaseError } from '@/lib/database-errors';
+import { Student } from '@/hooks/useStudents';
 
 const studentSchema = z.object({
   student_id: z.string().min(1, 'আইডি প্রয়োজন').max(50, 'আইডি সর্বোচ্চ ৫০ অক্ষরের হতে পারে'),
@@ -33,10 +34,12 @@ interface StudentFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  editData?: Student | null;
 }
 
-export function StudentForm({ open, onOpenChange, onSuccess }: StudentFormProps) {
+export function StudentForm({ open, onOpenChange, onSuccess, editData }: StudentFormProps) {
   const [loading, setLoading] = useState(false);
+  const isEditing = !!editData;
 
   const {
     register,
@@ -51,6 +54,25 @@ export function StudentForm({ open, onOpenChange, onSuccess }: StudentFormProps)
 
   const selectedDepartment = watch('department');
 
+  useEffect(() => {
+    if (editData) {
+      setValue('student_id', editData.student_id);
+      setValue('name', editData.name);
+      setValue('father_name', editData.father_name || '');
+      setValue('mother_name', editData.mother_name || '');
+      setValue('date_of_birth', editData.date_of_birth || '');
+      setValue('phone', editData.phone || '');
+      setValue('guardian_phone', editData.guardian_phone);
+      setValue('address', editData.address || '');
+      setValue('department', editData.department);
+      setValue('class_name', editData.class_name);
+      setValue('admission_date', editData.admission_date || '');
+      setValue('notes', editData.notes || '');
+    } else {
+      reset();
+    }
+  }, [editData, setValue, reset]);
+
   const onSubmit = async (data: StudentFormData) => {
     setLoading(true);
     try {
@@ -61,7 +83,7 @@ export function StudentForm({ open, onOpenChange, onSuccess }: StudentFormProps)
         return;
       }
 
-      const { error } = await supabase.from('students').insert({
+      const studentData = {
         student_id: data.student_id,
         name: data.name,
         father_name: data.father_name || null,
@@ -74,12 +96,23 @@ export function StudentForm({ open, onOpenChange, onSuccess }: StudentFormProps)
         class_name: data.class_name,
         admission_date: data.admission_date || new Date().toISOString().split('T')[0],
         notes: data.notes || null,
-        created_by: user.id,
-      });
+      };
 
-      if (error) throw error;
+      if (isEditing) {
+        const { error } = await supabase.from('students')
+          .update(studentData)
+          .eq('id', editData.id);
+        if (error) throw error;
+        toast.success('ছাত্র তথ্য আপডেট হয়েছে');
+      } else {
+        const { error } = await supabase.from('students').insert({
+          ...studentData,
+          created_by: user.id,
+        });
+        if (error) throw error;
+        toast.success('ছাত্র সফলভাবে যুক্ত হয়েছে');
+      }
 
-      toast.success('ছাত্র সফলভাবে যুক্ত হয়েছে');
       reset();
       onOpenChange(false);
       onSuccess();
@@ -94,7 +127,7 @@ export function StudentForm({ open, onOpenChange, onSuccess }: StudentFormProps)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>নতুন ছাত্র যুক্ত করুন</DialogTitle>
+          <DialogTitle>{isEditing ? 'ছাত্র তথ্য সম্পাদনা' : 'নতুন ছাত্র যুক্ত করুন'}</DialogTitle>
           <DialogDescription>ছাত্রের সকল তথ্য পূরণ করুন</DialogDescription>
         </DialogHeader>
 
@@ -102,7 +135,7 @@ export function StudentForm({ open, onOpenChange, onSuccess }: StudentFormProps)
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="student_id">ছাত্র আইডি *</Label>
-              <Input id="student_id" {...register('student_id')} placeholder="ST001" />
+              <Input id="student_id" {...register('student_id')} placeholder="ST001" disabled={isEditing} />
               {errors.student_id && <p className="text-sm text-destructive">{errors.student_id.message}</p>}
             </div>
 
@@ -153,7 +186,7 @@ export function StudentForm({ open, onOpenChange, onSuccess }: StudentFormProps)
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="department">বিভাগ *</Label>
-              <Select onValueChange={(value) => setValue('department', value as any)}>
+              <Select value={selectedDepartment} onValueChange={(value) => setValue('department', value as any)}>
                 <SelectTrigger>
                   <SelectValue placeholder="বিভাগ নির্বাচন করুন" />
                 </SelectTrigger>
@@ -188,7 +221,7 @@ export function StudentForm({ open, onOpenChange, onSuccess }: StudentFormProps)
               বাতিল
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'যুক্ত হচ্ছে...' : 'যুক্ত করুন'}
+              {loading ? (isEditing ? 'আপডেট হচ্ছে...' : 'যুক্ত হচ্ছে...') : (isEditing ? 'আপডেট করুন' : 'যুক্ত করুন')}
             </Button>
           </div>
         </form>
