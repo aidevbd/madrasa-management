@@ -9,7 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStaff, useStaffStats, useDeleteStaff, Staff as StaffType } from "@/hooks/useStaff";
+import { useStaff, useStaffStats, useDeleteStaff, type Staff as StaffType } from "@/hooks/useStaff";
 import { StaffForm } from "@/components/forms/StaffForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
