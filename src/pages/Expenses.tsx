@@ -2,21 +2,98 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { Search, Plus, Download, TrendingDown, TrendingUp } from "lucide-react";
+import { Search, Plus, Download, TrendingDown, TrendingUp, ShoppingCart, ChevronDown, ChevronUp, Edit, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useExpenses, useExpenseStats } from "@/hooks/useExpenses";
+import { useExpenses, useExpenseStats, Expense } from "@/hooks/useExpenses";
 import { useTransactions, useTransactionStats } from "@/hooks/useTransactions";
 import { ExpenseForm } from "@/components/forms/ExpenseForm";
+import { BulkExpenseForm } from "@/components/forms/BulkExpenseForm";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "@/components/ui/collapsible";
+
+// Group expenses by batch_id
+interface BatchGroup {
+  batch_id: string | null;
+  batch_name: string | null;
+  date: string;
+  items: Expense[];
+  totalAmount: number;
+}
+
+function groupExpensesByBatch(expenses: Expense[]): BatchGroup[] {
+  const batches = new Map<string, BatchGroup>();
+  const singles: Expense[] = [];
+
+  expenses.forEach((expense) => {
+    if (expense.batch_id) {
+      const key = expense.batch_id;
+      if (!batches.has(key)) {
+        batches.set(key, {
+          batch_id: expense.batch_id,
+          batch_name: expense.batch_name,
+          date: expense.expense_date,
+          items: [],
+          totalAmount: 0,
+        });
+      }
+      const batch = batches.get(key)!;
+      batch.items.push(expense);
+      batch.totalAmount += Number(expense.amount);
+    } else {
+      singles.push(expense);
+    }
+  });
+
+  // Convert batches to array and add singles as individual groups
+  const result: BatchGroup[] = [];
+  
+  batches.forEach((batch) => {
+    result.push(batch);
+  });
+
+  singles.forEach((expense) => {
+    result.push({
+      batch_id: null,
+      batch_name: null,
+      date: expense.expense_date,
+      items: [expense],
+      totalAmount: Number(expense.amount),
+    });
+  });
+
+  // Sort by date descending
+  return result.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+}
 
 export default function Expenses() {
   const [searchTerm, setSearchTerm] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
   const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isBulkFormOpen, setIsBulkFormOpen] = useState(false);
+  const [expandedBatches, setExpandedBatches] = useState<Set<string>>(new Set());
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+  const [editData, setEditData] = useState<Expense | null>(null);
   
+  const queryClient = useQueryClient();
   const { data: expenses, isLoading: expensesLoading, refetch: refetchExpenses } = useExpenses("monthly");
   const expenseStats = useExpenseStats(expenses);
   
@@ -35,12 +112,52 @@ export default function Expenses() {
   const filteredExpenses = expenses?.filter(expense => {
     const matchesSearch = searchTerm === "" || 
       expense.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      expense.expense_id.toLowerCase().includes(searchTerm.toLowerCase());
+      expense.expense_id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (expense.batch_name && expense.batch_name.toLowerCase().includes(searchTerm.toLowerCase()));
     
     const matchesCategory = categoryFilter === "all" || expense.category === categoryFilter;
     
     return matchesSearch && matchesCategory;
   }) || [];
+
+  const groupedExpenses = groupExpensesByBatch(filteredExpenses);
+
+  const toggleBatch = (batchId: string) => {
+    setExpandedBatches(prev => {
+      const newSet = new Set(prev);
+      if (newSet.has(batchId)) {
+        newSet.delete(batchId);
+      } else {
+        newSet.add(batchId);
+      }
+      return newSet;
+    });
+  };
+
+  const handleDelete = async () => {
+    if (!deleteId) return;
+    try {
+      const { error } = await supabase.from("expenses").delete().eq("id", deleteId);
+      if (error) throw error;
+      toast.success("খরচ মুছে ফেলা হয়েছে");
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+    } catch (error: any) {
+      toast.error(error.message || "মুছতে সমস্যা হয়েছে");
+    } finally {
+      setDeleteId(null);
+    }
+  };
+
+  const handleDeleteBatch = async (batchId: string) => {
+    try {
+      const { error } = await supabase.from("expenses").delete().eq("batch_id", batchId);
+      if (error) throw error;
+      toast.success("পুরো বাজার মুছে ফেলা হয়েছে");
+      queryClient.invalidateQueries({ queryKey: ["expenses"] });
+    } catch (error: any) {
+      toast.error(error.message || "মুছতে সমস্যা হয়েছে");
+    }
+  };
 
   const exportExpensesToCSV = () => {
     if (!expenses || expenses.length === 0) {
@@ -48,14 +165,15 @@ export default function Expenses() {
       return;
     }
 
-    const headers = ['তারিখ', 'আইডি', 'শিরোনাম', 'ক্যাটাগরি', 'পরিমাণ', 'বিবরণ'];
+    const headers = ['তারিখ', 'আইডি', 'শিরোনাম', 'ক্যাটাগরি', 'পরিমাণ', 'বিবরণ', 'ব্যাচ'];
     const csvData = expenses.map(e => [
       e.expense_date,
       e.expense_id,
       e.title,
       e.category,
       e.amount,
-      e.description || ''
+      e.description || '',
+      e.batch_name || ''
     ]);
 
     const csvContent = [
@@ -94,15 +212,19 @@ export default function Expenses() {
           <p className="text-muted-foreground mt-1 text-sm md:text-base">দৈনন্দিন বাজার ও বোর্ডিং খরচ</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button className="flex-1 sm:flex-none" onClick={() => setIsFormOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">নতুন খরচ যুক্ত করুন</span>
-            <span className="sm:hidden">নতুন খরচ</span>
+          <Button variant="default" onClick={() => setIsBulkFormOpen(true)}>
+            <ShoppingCart className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">বাজার করুন (একাধিক)</span>
+            <span className="sm:hidden">বাজার</span>
           </Button>
-          <Button variant="outline" className="flex-1 sm:flex-none" onClick={exportExpensesToCSV}>
+          <Button variant="outline" onClick={() => setIsFormOpen(true)}>
+            <Plus className="w-4 h-4 mr-2" />
+            <span className="hidden sm:inline">একক খরচ</span>
+            <span className="sm:hidden">একক</span>
+          </Button>
+          <Button variant="outline" onClick={exportExpensesToCSV}>
             <Download className="w-4 h-4 mr-2" />
-            <span className="hidden sm:inline">রিপোর্ট ডাউনলোড</span>
-            <span className="sm:hidden">ডাউনলোড</span>
+            <span className="hidden sm:inline">রিপোর্ট</span>
           </Button>
         </div>
       </div>
@@ -175,7 +297,7 @@ export default function Expenses() {
         </CardContent>
       </Card>
 
-      {/* Expenses Table */}
+      {/* Expenses Table with Batch Grouping */}
       <Card>
         <CardHeader className="p-4 md:p-6">
           <CardTitle className="text-lg md:text-xl">খরচের তালিকা</CardTitle>
@@ -183,7 +305,7 @@ export default function Expenses() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
-                placeholder="খরচের শিরোনাম বা আইডি দিয়ে সার্চ করুন..."
+                placeholder="খরচের শিরোনাম, আইডি বা ব্যাচ দিয়ে সার্চ..."
                 className="pl-10"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
@@ -206,56 +328,189 @@ export default function Expenses() {
             </Select>
           </div>
         </CardHeader>
-        <CardContent className="p-0 md:p-6">
-          <div className="rounded-md border overflow-x-auto">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead className="whitespace-nowrap">তারিখ</TableHead>
-                  <TableHead className="whitespace-nowrap">শিরোনাম</TableHead>
-                  <TableHead className="whitespace-nowrap hidden md:table-cell">ক্যাটাগরি</TableHead>
-                  <TableHead className="whitespace-nowrap">পরিমাণ (৳)</TableHead>
-                  <TableHead className="whitespace-nowrap hidden lg:table-cell">বিবরণ</TableHead>
-                  <TableHead className="text-right whitespace-nowrap">কার্যক্রম</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {filteredExpenses.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
-                      কোনো খরচের তথ্য পাওয়া যায়নি
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  filteredExpenses.map((expense) => (
-                    <TableRow key={expense.id}>
-                      <TableCell className="font-medium whitespace-nowrap text-xs md:text-sm">{formatDate(expense.expense_date)}</TableCell>
-                      <TableCell className="font-medium whitespace-nowrap text-xs md:text-sm">{expense.title}</TableCell>
-                      <TableCell className="hidden md:table-cell">
-                        <Badge variant="outline" className="whitespace-nowrap text-xs">{expense.category}</Badge>
-                      </TableCell>
-                      <TableCell className="font-semibold whitespace-nowrap text-xs md:text-sm">{formatCurrency(Number(expense.amount))}</TableCell>
-                      <TableCell className="text-muted-foreground hidden lg:table-cell text-xs md:text-sm max-w-xs truncate">{expense.description || '-'}</TableCell>
-                      <TableCell className="text-right whitespace-nowrap">
-                        <Button variant="ghost" size="sm" className="text-xs md:text-sm">বিস্তারিত</Button>
-                      </TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
+        <CardContent className="p-4 md:p-6 pt-0">
+          <div className="space-y-3">
+            {groupedExpenses.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground border rounded-lg">
+                কোনো খরচের তথ্য পাওয়া যায়নি
+              </div>
+            ) : (
+              groupedExpenses.map((group, index) => {
+                const isBatch = group.batch_id !== null;
+                const isExpanded = group.batch_id ? expandedBatches.has(group.batch_id) : true;
+
+                if (isBatch) {
+                  return (
+                    <Collapsible key={group.batch_id || index} open={isExpanded}>
+                      <div className="border rounded-lg overflow-hidden">
+                        <CollapsibleTrigger asChild>
+                          <div 
+                            className="flex items-center justify-between p-4 bg-muted/50 cursor-pointer hover:bg-muted/70 transition-colors"
+                            onClick={() => toggleBatch(group.batch_id!)}
+                          >
+                            <div className="flex items-center gap-3">
+                              <ShoppingCart className="h-5 w-5 text-primary" />
+                              <div>
+                                <div className="font-semibold flex items-center gap-2">
+                                  {group.batch_name || "বাজার"}
+                                  <Badge variant="secondary" className="text-xs">
+                                    {group.items.length}টি আইটেম
+                                  </Badge>
+                                </div>
+                                <div className="text-xs text-muted-foreground">{formatDate(group.date)}</div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-4">
+                              <span className="font-bold text-lg">৳ {formatCurrency(group.totalAmount)}</span>
+                              <div className="flex items-center gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  className="h-8 w-8 text-destructive hover:text-destructive"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    if (confirm("পুরো বাজার মুছে ফেলতে চান?")) {
+                                      handleDeleteBatch(group.batch_id!);
+                                    }
+                                  }}
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                                {isExpanded ? <ChevronUp className="h-5 w-5" /> : <ChevronDown className="h-5 w-5" />}
+                              </div>
+                            </div>
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <Table>
+                            <TableHeader>
+                              <TableRow className="bg-background">
+                                <TableHead>আইটেম</TableHead>
+                                <TableHead>ক্যাটাগরি</TableHead>
+                                <TableHead>পরিমাণ</TableHead>
+                                <TableHead>বিবরণ</TableHead>
+                                <TableHead className="text-right">কার্যক্রম</TableHead>
+                              </TableRow>
+                            </TableHeader>
+                            <TableBody>
+                              {group.items.map((expense) => (
+                                <TableRow key={expense.id}>
+                                  <TableCell className="font-medium">{expense.title}</TableCell>
+                                  <TableCell>
+                                    <Badge variant="outline">{expense.category}</Badge>
+                                  </TableCell>
+                                  <TableCell className="font-semibold">৳ {formatCurrency(Number(expense.amount))}</TableCell>
+                                  <TableCell className="text-muted-foreground max-w-xs truncate">
+                                    {expense.description || '-'}
+                                  </TableCell>
+                                  <TableCell className="text-right">
+                                    <div className="flex justify-end gap-1">
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8"
+                                        onClick={() => setEditData(expense)}
+                                      >
+                                        <Edit className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 text-destructive hover:text-destructive"
+                                        onClick={() => setDeleteId(expense.id)}
+                                      >
+                                        <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                    </div>
+                                  </TableCell>
+                                </TableRow>
+                              ))}
+                            </TableBody>
+                          </Table>
+                        </CollapsibleContent>
+                      </div>
+                    </Collapsible>
+                  );
+                }
+
+                // Single expense (not in batch)
+                const expense = group.items[0];
+                return (
+                  <div key={expense.id} className="border rounded-lg p-4 flex items-center justify-between">
+                    <div className="flex items-center gap-4">
+                      <div>
+                        <div className="font-semibold">{expense.title}</div>
+                        <div className="text-xs text-muted-foreground flex items-center gap-2">
+                          {formatDate(expense.expense_date)}
+                          <Badge variant="outline" className="text-xs">{expense.category}</Badge>
+                        </div>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-4">
+                      <span className="font-bold">৳ {formatCurrency(Number(expense.amount))}</span>
+                      <div className="flex gap-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8"
+                          onClick={() => setEditData(expense)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-destructive hover:text-destructive"
+                          onClick={() => setDeleteId(expense.id)}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })
+            )}
           </div>
         </CardContent>
       </Card>
 
       <ExpenseForm 
-        open={isFormOpen} 
-        onOpenChange={setIsFormOpen} 
+        open={isFormOpen || !!editData} 
+        onOpenChange={(open) => {
+          setIsFormOpen(open);
+          if (!open) setEditData(null);
+        }}
+        editData={editData}
         onSuccess={() => {
           refetchExpenses();
           setIsFormOpen(false);
+          setEditData(null);
         }} 
       />
+
+      <BulkExpenseForm
+        open={isBulkFormOpen}
+        onOpenChange={setIsBulkFormOpen}
+        onSuccess={() => refetchExpenses()}
+      />
+
+      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>আপনি কি নিশ্চিত?</AlertDialogTitle>
+            <AlertDialogDescription>
+              এই খরচটি মুছে ফেলা হবে। এই কাজটি পূর্বাবস্থায় ফেরানো যাবে না।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              মুছে ফেলুন
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
