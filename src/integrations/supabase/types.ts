@@ -290,6 +290,8 @@ export type Database = {
       expenses: {
         Row: {
           amount: number
+          batch_id: string | null
+          batch_name: string | null
           category: Database["public"]["Enums"]["expense_category"]
           created_at: string
           created_by: string | null
@@ -303,6 +305,8 @@ export type Database = {
         }
         Insert: {
           amount: number
+          batch_id?: string | null
+          batch_name?: string | null
           category: Database["public"]["Enums"]["expense_category"]
           created_at?: string
           created_by?: string | null
@@ -316,6 +320,8 @@ export type Database = {
         }
         Update: {
           amount?: number
+          batch_id?: string | null
+          batch_name?: string | null
           category?: Database["public"]["Enums"]["expense_category"]
           created_at?: string
           created_by?: string | null

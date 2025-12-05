@@ -14,6 +14,8 @@ export interface Expense {
   created_by: string | null;
   created_at: string;
   updated_at: string;
+  batch_id: string | null;
+  batch_name: string | null;
 }
 
 export function useExpenses(timeFilter: string = "monthly") {

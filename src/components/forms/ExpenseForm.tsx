@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -11,6 +11,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { mapDatabaseError } from '@/lib/database-errors';
+import { Expense } from '@/hooks/useExpenses';
 
 const expenseSchema = z.object({
   expense_id: z.string().min(1, 'আইডি প্রয়োজন').max(50, 'আইডি সর্বোচ্চ ৫০ অক্ষরের হতে পারে'),
@@ -27,10 +28,12 @@ interface ExpenseFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  editData?: Expense | null;
 }
 
-export function ExpenseForm({ open, onOpenChange, onSuccess }: ExpenseFormProps) {
+export function ExpenseForm({ open, onOpenChange, onSuccess, editData }: ExpenseFormProps) {
   const [loading, setLoading] = useState(false);
+  const isEditing = !!editData;
 
   const {
     register,
@@ -42,6 +45,19 @@ export function ExpenseForm({ open, onOpenChange, onSuccess }: ExpenseFormProps)
     resolver: zodResolver(expenseSchema),
   });
 
+  useEffect(() => {
+    if (editData) {
+      setValue('expense_id', editData.expense_id);
+      setValue('title', editData.title);
+      setValue('category', editData.category);
+      setValue('amount', String(editData.amount));
+      setValue('description', editData.description || '');
+      setValue('expense_date', editData.expense_date);
+    } else {
+      reset();
+    }
+  }, [editData, setValue, reset]);
+
   const onSubmit = async (data: ExpenseFormData) => {
     setLoading(true);
     try {
@@ -52,19 +68,33 @@ export function ExpenseForm({ open, onOpenChange, onSuccess }: ExpenseFormProps)
         return;
       }
 
-      const { error } = await supabase.from('expenses').insert({
-        expense_id: data.expense_id,
-        title: data.title,
-        category: data.category,
-        amount: parseFloat(data.amount),
-        description: data.description || null,
-        expense_date: data.expense_date || new Date().toISOString().split('T')[0],
-        created_by: user.id,
-      });
+      if (isEditing) {
+        const { error } = await supabase.from('expenses').update({
+          expense_id: data.expense_id,
+          title: data.title,
+          category: data.category,
+          amount: parseFloat(data.amount),
+          description: data.description || null,
+          expense_date: data.expense_date || new Date().toISOString().split('T')[0],
+        }).eq('id', editData.id);
 
-      if (error) throw error;
+        if (error) throw error;
+        toast.success('খরচ সফলভাবে আপডেট হয়েছে');
+      } else {
+        const { error } = await supabase.from('expenses').insert({
+          expense_id: data.expense_id,
+          title: data.title,
+          category: data.category,
+          amount: parseFloat(data.amount),
+          description: data.description || null,
+          expense_date: data.expense_date || new Date().toISOString().split('T')[0],
+          created_by: user.id,
+        });
 
-      toast.success('খরচ সফলভাবে যুক্ত হয়েছে');
+        if (error) throw error;
+        toast.success('খরচ সফলভাবে যুক্ত হয়েছে');
+      }
+
       reset();
       onOpenChange(false);
       onSuccess();
@@ -79,7 +109,7 @@ export function ExpenseForm({ open, onOpenChange, onSuccess }: ExpenseFormProps)
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-lg">
         <DialogHeader>
-          <DialogTitle>নতুন খরচ যুক্ত করুন</DialogTitle>
+          <DialogTitle>{isEditing ? 'খরচ সম্পাদনা করুন' : 'নতুন খরচ যুক্ত করুন'}</DialogTitle>
           <DialogDescription>খরচের সকল তথ্য পূরণ করুন</DialogDescription>
         </DialogHeader>
 
@@ -106,7 +136,10 @@ export function ExpenseForm({ open, onOpenChange, onSuccess }: ExpenseFormProps)
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="category">ক্যাটাগরি *</Label>
-              <Select onValueChange={(value) => setValue('category', value as any)}>
+              <Select 
+                defaultValue={editData?.category}
+                onValueChange={(value) => setValue('category', value as any)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="ক্যাটাগরি নির্বাচন করুন" />
                 </SelectTrigger>
@@ -140,7 +173,7 @@ export function ExpenseForm({ open, onOpenChange, onSuccess }: ExpenseFormProps)
               বাতিল
             </Button>
             <Button type="submit" disabled={loading}>
-              {loading ? 'যুক্ত হচ্ছে...' : 'যুক্ত করুন'}
+              {loading ? (isEditing ? 'আপডেট হচ্ছে...' : 'যুক্ত হচ্ছে...') : (isEditing ? 'আপডেট করুন' : 'যুক্ত করুন')}
             </Button>
           </div>
         </form>
