@@ -71,7 +71,6 @@ export function NoticeForm({ open, onOpenChange, onSuccess }: NoticeFormProps) {
       reset();
       onSuccess();
     } catch (error: any) {
-      console.error('Notice insert error:', error);
       toast.error('নোটিশ প্রকাশ করতে সমস্যা হয়েছে');
     } finally {
       setLoading(false);

@@ -76,7 +76,6 @@ export function TransactionForm({ open, onOpenChange, onSuccess }: TransactionFo
       reset();
       onSuccess();
     } catch (error: any) {
-      console.error('Transaction insert error:', error);
       toast.error('লেনদেন যুক্ত করতে সমস্যা হয়েছে');
     } finally {
       setLoading(false);

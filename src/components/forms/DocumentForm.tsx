@@ -89,7 +89,6 @@ export function DocumentForm({ open, onOpenChange, onSuccess }: DocumentFormProp
       setFile(null);
       onSuccess();
     } catch (error: any) {
-      console.error('Document upload error:', error);
       toast.error('ডকুমেন্ট আপলোড করতে সমস্যা হয়েছে');
     } finally {
       setLoading(false);

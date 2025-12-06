@@ -61,8 +61,8 @@ export default function Dashboard() {
         .order('created_at', { ascending: false })
         .limit(2);
       setRecentNotices(noticesData || []);
-    } catch (error) {
-      console.error('Error fetching recent activity:', error);
+    } catch {
+      // Silent fail for dashboard activity fetch
     }
   };
 
