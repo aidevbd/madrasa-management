@@ -97,9 +97,8 @@ export const useMarkAttendance = () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       toast.success('উপস্থিতি সংরক্ষিত হয়েছে');
     },
-    onError: (error: any) => {
+    onError: () => {
       toast.error('উপস্থিতি সংরক্ষণ ব্যর্থ হয়েছে');
-      console.error('Attendance error:', error);
     },
   });
 };
@@ -134,9 +133,8 @@ export const useBulkMarkAttendance = () => {
       queryClient.invalidateQueries({ queryKey: ['attendance'] });
       toast.success('সকল উপস্থিতি সংরক্ষিত হয়েছে');
     },
-    onError: (error: any) => {
+    onError: () => {
       toast.error('উপস্থিতি সংরক্ষণ ব্যর্থ হয়েছে');
-      console.error('Bulk attendance error:', error);
     },
   });
 };
