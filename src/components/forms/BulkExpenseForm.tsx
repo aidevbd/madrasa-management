@@ -171,13 +171,7 @@ export function BulkExpenseForm({ open, onOpenChange, onSuccess }: BulkExpenseFo
             </div>
 
             <div className="space-y-3">
-              <div className="flex items-center justify-between">
-                <h4 className="font-medium">আইটেম সমূহ</h4>
-                <Button type="button" variant="outline" size="sm" onClick={addItem}>
-                  <Plus className="h-4 w-4 mr-1" />
-                  আইটেম যোগ করুন
-                </Button>
-              </div>
+              <h4 className="font-medium">আইটেম সমূহ</h4>
 
               {fields.map((field, index) => (
                 <Card key={field.id} className="border-border/50">
@@ -271,6 +265,11 @@ export function BulkExpenseForm({ open, onOpenChange, onSuccess }: BulkExpenseFo
                   </CardContent>
                 </Card>
               ))}
+
+              <Button type="button" variant="outline" size="sm" onClick={addItem} className="w-full">
+                <Plus className="h-4 w-4 mr-1" />
+                নতুন আইটেম যোগ করুন
+              </Button>
             </div>
 
             <div className="flex items-center justify-between pt-4 border-t">
