@@ -742,6 +742,7 @@ export type Database = {
           staff_id: string
           status: string | null
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -761,6 +762,7 @@ export type Database = {
           staff_id: string
           status?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -780,6 +782,7 @@ export type Database = {
           staff_id?: string
           status?: string | null
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
@@ -803,6 +806,7 @@ export type Database = {
           status: string | null
           student_id: string
           updated_at: string
+          user_id: string | null
         }
         Insert: {
           address?: string | null
@@ -823,6 +827,7 @@ export type Database = {
           status?: string | null
           student_id: string
           updated_at?: string
+          user_id?: string | null
         }
         Update: {
           address?: string | null
@@ -843,6 +848,7 @@ export type Database = {
           status?: string | null
           student_id?: string
           updated_at?: string
+          user_id?: string | null
         }
         Relationships: []
       }
