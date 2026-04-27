@@ -111,9 +111,10 @@ export const useUpdateTimetable = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...entry }: Partial<Timetable> & { id: string }) => {
+      const { teacher, ...updateData } = entry as any;
       const { data, error } = await supabase
         .from('timetables')
-        .update(entry)
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
