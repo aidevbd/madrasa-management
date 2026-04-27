@@ -108,9 +108,9 @@ export default function Attendance() {
                     {activeTab === 'student' ? 'ছাত্রের' : 'স্টাফের'} মাসিক উপস্থিতি রিপোর্ট
                   </CardDescription>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
                   <Select value={statsMonth.toString()} onValueChange={(v) => setStatsMonth(Number(v))}>
-                    <SelectTrigger className="w-[180px]">
+                    <SelectTrigger className="w-full sm:w-[180px]">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -121,7 +121,7 @@ export default function Attendance() {
                     </SelectContent>
                   </Select>
                   <Select value={selectedUser} onValueChange={setSelectedUser}>
-                    <SelectTrigger className="w-[200px]">
+                    <SelectTrigger className="w-full sm:w-[200px]">
                       <SelectValue placeholder="নির্বাচন করুন" />
                     </SelectTrigger>
                     <SelectContent>
