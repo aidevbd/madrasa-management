@@ -159,91 +159,72 @@ export default function Dashboard() {
       {/* Charts Section */}
       <div className="grid gap-4 lg:grid-cols-2">
         {/* Student Distribution Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>বিভাগ অনুযায়ী ছাত্র বিতরণ</CardTitle>
-            <CardDescription>প্রতিটি বিভাগে ছাত্রদের সংখ্যা</CardDescription>
+        <Card className="min-w-0 overflow-hidden">
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-base md:text-lg">বিভাগ অনুযায়ী ছাত্র বিতরণ</CardTitle>
+            <CardDescription className="text-xs md:text-sm">প্রতিটি বিভাগে ছাত্রদের সংখ্যা</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-4 md:p-6 pt-0 min-w-0">
             <ChartContainer
               config={{
-                maktab: {
-                  label: "মক্তব",
-                  color: "hsl(var(--primary))",
-                },
-                hifz: {
-                  label: "হিফজ",
-                  color: "hsl(var(--success))",
-                },
-                kitab: {
-                  label: "কিতাব",
-                  color: "hsl(var(--accent))",
-                },
+                maktab: { label: "মক্তব", color: "hsl(var(--primary))" },
+                hifz: { label: "হিফজ", color: "hsl(var(--success))" },
+                kitab: { label: "কিতাব", color: "hsl(var(--accent))" },
               }}
-              className="h-[300px]"
+              className="h-[260px] sm:h-[300px] w-full"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={[
-                      { name: "মক্তব", value: stats.students.maktab, fill: "hsl(var(--primary))" },
-                      { name: "হিফজ", value: stats.students.hifz, fill: "hsl(var(--success))" },
-                      { name: "কিতাব", value: stats.students.kitab, fill: "hsl(var(--accent))" },
-                    ]}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, value }) => `${name}: ${value}`}
-                    outerRadius={80}
-                    dataKey="value"
-                  >
-                  </Pie>
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                </PieChart>
-              </ResponsiveContainer>
+              <PieChart>
+                <Pie
+                  data={[
+                    { name: "মক্তব", value: stats.students.maktab, fill: "hsl(var(--primary))" },
+                    { name: "হিফজ", value: stats.students.hifz, fill: "hsl(var(--success))" },
+                    { name: "কিতাব", value: stats.students.kitab, fill: "hsl(var(--accent))" },
+                  ]}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ name, value }) => `${name}: ${value}`}
+                  outerRadius="70%"
+                  dataKey="value"
+                />
+                <ChartTooltip content={<ChartTooltipContent />} />
+              </PieChart>
             </ChartContainer>
           </CardContent>
         </Card>
 
         {/* Income vs Expense Chart */}
-        <Card>
-          <CardHeader>
-            <CardTitle>আয় বনাম ব্যয়</CardTitle>
-            <CardDescription>চলতি মাসের আর্থিক পরিস্থিতি</CardDescription>
+        <Card className="min-w-0 overflow-hidden">
+          <CardHeader className="p-4 md:p-6">
+            <CardTitle className="text-base md:text-lg">আয় বনাম ব্যয়</CardTitle>
+            <CardDescription className="text-xs md:text-sm">চলতি মাসের আর্থিক পরিস্থিতি</CardDescription>
           </CardHeader>
-          <CardContent>
+          <CardContent className="p-2 sm:p-4 md:p-6 pt-0 min-w-0">
             <ChartContainer
               config={{
-                income: {
-                  label: "আয়",
-                  color: "hsl(var(--success))",
-                },
-                expense: {
-                  label: "ব্যয়",
-                  color: "hsl(var(--destructive))",
-                },
+                income: { label: "আয়", color: "hsl(var(--success))" },
+                expense: { label: "ব্যয়", color: "hsl(var(--destructive))" },
               }}
-              className="h-[300px]"
+              className="h-[260px] sm:h-[300px] w-full"
             >
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart
-                  data={[
-                    {
-                      name: "চলতি মাস",
-                      আয়: stats.finance.monthlyIncome,
-                      ব্যয়: stats.finance.monthlyExpense,
-                    },
-                  ]}
-                >
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                  <XAxis dataKey="name" className="text-xs" />
-                  <YAxis className="text-xs" />
-                  <ChartTooltip content={<ChartTooltipContent />} />
-                  <Legend />
-                  <Bar dataKey="আয়" fill="hsl(var(--success))" radius={[8, 8, 0, 0]} />
-                  <Bar dataKey="ব্যয়" fill="hsl(var(--destructive))" radius={[8, 8, 0, 0]} />
-                </BarChart>
-              </ResponsiveContainer>
+              <BarChart
+                data={[
+                  {
+                    name: "চলতি মাস",
+                    আয়: stats.finance.monthlyIncome,
+                    ব্যয়: stats.finance.monthlyExpense,
+                  },
+                ]}
+                margin={{ top: 8, right: 8, left: 0, bottom: 0 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                <XAxis dataKey="name" className="text-xs" tick={{ fontSize: 11 }} />
+                <YAxis className="text-xs" tick={{ fontSize: 10 }} width={50} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Legend wrapperStyle={{ fontSize: '12px' }} />
+                <Bar dataKey="আয়" fill="hsl(var(--success))" radius={[8, 8, 0, 0]} />
+                <Bar dataKey="ব্যয়" fill="hsl(var(--destructive))" radius={[8, 8, 0, 0]} />
+              </BarChart>
             </ChartContainer>
           </CardContent>
         </Card>
