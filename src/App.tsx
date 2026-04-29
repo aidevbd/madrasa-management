@@ -24,6 +24,8 @@ import Hostel from "./pages/Hostel";
 import Homework from "./pages/Homework";
 import ParentPortal from "./pages/ParentPortal";
 import Auth from "./pages/Auth";
+import ForgotPassword from "./pages/ForgotPassword";
+import ResetPassword from "./pages/ResetPassword";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -38,6 +40,8 @@ const App = () => (
         <AuthProvider>
           <Routes>
             <Route path="/auth" element={<Auth />} />
+            <Route path="/forgot-password" element={<ForgotPassword />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="/parent-portal" element={<ParentPortal />} />
             <Route
               path="/"
