@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Link } from 'react-router-dom';
 import { BookOpen } from 'lucide-react';
 import { z } from 'zod';
 
@@ -132,6 +133,11 @@ export default function Auth() {
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'লগইন হচ্ছে...' : 'লগইন'}
                 </Button>
+                <div className="text-center">
+                  <Link to="/forgot-password" className="text-sm text-primary hover:underline">
+                    পাসওয়ার্ড ভুলে গেছেন?
+                  </Link>
+                </div>
               </form>
             </TabsContent>
             
