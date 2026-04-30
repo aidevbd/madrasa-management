@@ -373,6 +373,104 @@ export default function Settings() {
           </Card>
         </TabsContent>
 
+        <TabsContent value="parents" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="w-5 h-5" />
+                অভিভাবক-ছাত্র সংযোগ
+              </CardTitle>
+              <CardDescription>
+                অভিভাবক অ্যাকাউন্টের সাথে তাদের সন্তানদের যুক্ত করুন। অভিভাবককে আগে সাইন আপ করতে হবে।
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end">
+                <div className="space-y-2">
+                  <Label>অভিভাবক ব্যবহারকারী</Label>
+                  <Select value={linkParentId} onValueChange={setLinkParentId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="অভিভাবক নির্বাচন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {usersWithRoles.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.full_name} ({getRoleLabel(u.role)})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>ছাত্র</Label>
+                  <Select value={linkStudentId} onValueChange={setLinkStudentId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="ছাত্র নির্বাচন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allStudents.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name} ({s.student_id} - {s.class_name})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={() => linkParentMutation.mutate()}
+                  disabled={linkParentMutation.isPending || !linkParentId || !linkStudentId}
+                >
+                  সংযুক্ত করুন
+                </Button>
+              </div>
+
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>অভিভাবক</TableHead>
+                      <TableHead>ছাত্র</TableHead>
+                      <TableHead>আইডি</TableHead>
+                      <TableHead>শ্রেণি</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {parentLinks.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          কোনো সংযোগ নেই
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      parentLinks.map((link: any) => {
+                        const parent = usersWithRoles.find((u) => u.id === link.parent_user_id);
+                        return (
+                          <TableRow key={link.id}>
+                            <TableCell>{parent?.full_name || link.parent_user_id.slice(0, 8)}</TableCell>
+                            <TableCell className="font-medium">{link.students?.name}</TableCell>
+                            <TableCell>{link.students?.student_id}</TableCell>
+                            <TableCell>{link.students?.class_name}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => unlinkParentMutation.mutate(link.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
         <TabsContent value="backup" className="space-y-4">
           <Card>
             <CardHeader>
