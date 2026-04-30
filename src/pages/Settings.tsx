@@ -114,6 +114,67 @@ export default function Settings() {
     onError: () => toast.error("পরিবর্তন করতে সমস্যা হয়েছে"),
   });
 
+  // Parent-Student links
+  const [linkParentId, setLinkParentId] = useState("");
+  const [linkStudentId, setLinkStudentId] = useState("");
+
+  const { data: parentLinks = [] } = useQuery({
+    queryKey: ["parent-links"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("parent_students")
+        .select("id, parent_user_id, student_id, students(name, student_id, class_name)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: allStudents = [] } = useQuery({
+    queryKey: ["all-students-min"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("students")
+        .select("id, name, student_id, class_name")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const linkParentMutation = useMutation({
+    mutationFn: async () => {
+      if (!linkParentId || !linkStudentId) throw new Error("সব তথ্য দিন");
+      const { error } = await supabase.from("parent_students").insert({
+        parent_user_id: linkParentId,
+        student_id: linkStudentId,
+      });
+      if (error) throw error;
+      // Also ensure they have parent role
+      await supabase.from("user_roles").delete().eq("user_id", linkParentId);
+      await supabase.from("user_roles").insert({ user_id: linkParentId, role: "parent" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["parent-links"] });
+      queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
+      setLinkParentId("");
+      setLinkStudentId("");
+      toast.success("অভিভাবক সংযুক্ত হয়েছে");
+    },
+    onError: (e: Error) => toast.error(e.message || "সংযুক্ত করতে সমস্যা"),
+  });
+
+  const unlinkParentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("parent_students").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["parent-links"] });
+      toast.success("সংযোগ মুছে ফেলা হয়েছে");
+    },
+  });
+
   type TableName = "students" | "staff" | "attendance" | "fee_payments" | "salary_payments" | "expenses" | "transactions";
 
   const exportData = async (tableName: TableName) => {
@@ -168,7 +229,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="w-4 h-4" />
             <span className="hidden sm:inline">প্রোফাইল</span>
@@ -176,6 +237,10 @@ export default function Settings() {
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
             <span className="hidden sm:inline">ভূমিকা</span>
+          </TabsTrigger>
+          <TabsTrigger value="parents" className="flex items-center gap-2">
+            <Link2 className="w-4 h-4" />
+            <span className="hidden sm:inline">অভিভাবক</span>
           </TabsTrigger>
           <TabsTrigger value="backup" className="flex items-center gap-2">
             <Database className="w-4 h-4" />
