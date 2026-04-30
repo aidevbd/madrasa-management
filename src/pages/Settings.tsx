@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Download, User, Shield, Database, Users } from "lucide-react";
+import { Download, User, Shield, Database, Users, Link2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface UserWithRole {
@@ -25,6 +25,7 @@ const ROLES = [
   { value: "admin", label: "অ্যাডমিন", description: "সম্পূর্ণ অ্যাক্সেস" },
   { value: "teacher", label: "শিক্ষক", description: "শিক্ষার্থী, পরীক্ষা, উপস্থিতি" },
   { value: "accountant", label: "অ্যাকাউন্ট্যান্ট", description: "ফি, বেতন, খরচ" },
+  { value: "parent", label: "অভিভাবক", description: "নিজের সন্তানের তথ্য" },
   { value: "user", label: "সাধারণ ব্যবহারকারী", description: "শুধু দেখতে পারবেন" },
 ];
 
@@ -102,7 +103,7 @@ export default function Settings() {
       await supabase.from("user_roles").delete().eq("user_id", userId);
       const { error } = await supabase.from("user_roles").insert({
         user_id: userId,
-        role: role as "admin" | "teacher" | "accountant" | "user",
+        role: role as "admin" | "teacher" | "accountant" | "parent" | "user",
       });
       if (error) throw error;
     },
