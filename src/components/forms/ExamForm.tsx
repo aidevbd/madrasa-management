@@ -19,8 +19,9 @@ import {
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { useCreateExam } from '@/hooks/useExams';
+import { useCreateExam, useUpdateExam, Exam } from '@/hooks/useExams';
 import { SUBJECTS } from '@/hooks/useTimetable';
+import { useEffect } from 'react';
 
 const examSchema = z.object({
   exam_name: z.string().min(1, 'পরীক্ষার নাম দিন'),
@@ -42,11 +43,14 @@ interface ExamFormProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  exam?: Exam | null;
 }
 
-const ExamForm = ({ open, onOpenChange, onSuccess }: ExamFormProps) => {
+const ExamForm = ({ open, onOpenChange, onSuccess, exam }: ExamFormProps) => {
   const createExam = useCreateExam();
-  
+  const updateExam = useUpdateExam();
+  const isEdit = !!exam;
+
   const form = useForm<ExamFormData>({
     resolver: zodResolver(examSchema),
     defaultValues: {
@@ -64,8 +68,43 @@ const ExamForm = ({ open, onOpenChange, onSuccess }: ExamFormProps) => {
     },
   });
 
+  useEffect(() => {
+    if (open) {
+      if (exam) {
+        form.reset({
+          exam_name: exam.exam_name,
+          exam_type: exam.exam_type,
+          department: exam.department,
+          class_name: exam.class_name,
+          subject: exam.subject,
+          total_marks: exam.total_marks,
+          pass_marks: exam.pass_marks,
+          exam_date: exam.exam_date,
+          start_time: exam.start_time || '',
+          end_time: exam.end_time || '',
+          academic_year: exam.academic_year,
+        });
+      } else {
+        form.reset({
+          exam_name: '',
+          exam_type: 'সাময়িক',
+          department: '',
+          class_name: '',
+          subject: '',
+          total_marks: 100,
+          pass_marks: 40,
+          exam_date: '',
+          start_time: '',
+          end_time: '',
+          academic_year: new Date().getFullYear(),
+        });
+      }
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, exam?.id]);
+
   const onSubmit = async (data: ExamFormData) => {
-    await createExam.mutateAsync({
+    const payload = {
       exam_name: data.exam_name,
       exam_type: data.exam_type,
       department: data.department,
@@ -78,7 +117,13 @@ const ExamForm = ({ open, onOpenChange, onSuccess }: ExamFormProps) => {
       end_time: data.end_time || undefined,
       academic_year: data.academic_year,
       is_active: true,
-    });
+    };
+
+    if (isEdit && exam) {
+      await updateExam.mutateAsync({ id: exam.id, ...payload });
+    } else {
+      await createExam.mutateAsync(payload);
+    }
     form.reset();
     onSuccess();
   };
