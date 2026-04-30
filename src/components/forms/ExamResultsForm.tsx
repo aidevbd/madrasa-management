@@ -39,32 +39,28 @@ const ExamResultsForm = ({ open, onOpenChange, exam, onSuccess }: ExamResultsFor
     s => s.department === exam.department && s.class_name === exam.class_name
   ) || [];
 
-  // Initialize results when students load
+  // Reset & initialize when exam changes or dialog opens
   useEffect(() => {
-    if (eligibleStudents.length > 0) {
-      const initialResults: Record<string, StudentResult> = {};
-      eligibleStudents.forEach(student => {
-        if (!results[student.id]) {
-          initialResults[student.id] = {
-            student_id: student.id,
-            marks_obtained: 0,
-            is_absent: false,
-            remarks: '',
-          };
-        }
-      });
-      if (Object.keys(initialResults).length > 0) {
-        setResults(prev => ({ ...prev, ...initialResults }));
-      }
-    }
-  }, [eligibleStudents.length]);
+    if (!open) return;
+    const initialResults: Record<string, StudentResult> = {};
+    eligibleStudents.forEach(student => {
+      initialResults[student.id] = {
+        student_id: student.id,
+        marks_obtained: 0,
+        is_absent: false,
+        remarks: '',
+      };
+    });
+    setResults(initialResults);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [exam.id, open, students?.length]);
 
   const handleMarksChange = (studentId: string, marks: number) => {
     setResults(prev => ({
       ...prev,
       [studentId]: {
         ...prev[studentId],
-        marks_obtained: Math.min(marks, exam.total_marks),
+        marks_obtained: Math.min(Math.max(marks, 0), exam.total_marks),
         is_absent: false,
       },
     }));
@@ -98,6 +94,7 @@ const ExamResultsForm = ({ open, onOpenChange, exam, onSuccess }: ExamResultsFor
       marks_obtained: result.marks_obtained,
       is_absent: result.is_absent,
       remarks: result.remarks || undefined,
+      total_marks: exam.total_marks,
     }));
 
     if (resultsArray.length === 0) {
@@ -108,6 +105,10 @@ const ExamResultsForm = ({ open, onOpenChange, exam, onSuccess }: ExamResultsFor
     await bulkAddResults.mutateAsync(resultsArray);
     onSuccess();
   };
+
+  // Grade preview uses exam.total_marks
+  const gradeFor = (r?: StudentResult) =>
+    r?.is_absent ? 'F' : calculateGrade(r?.marks_obtained || 0, exam.total_marks);
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
