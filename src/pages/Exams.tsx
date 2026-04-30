@@ -8,23 +8,46 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Plus, Search, FileText, GraduationCap, ClipboardList, Download } from 'lucide-react';
-import { useExams, useExamResults, Exam } from '@/hooks/useExams';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
+import { Plus, Search, FileText, GraduationCap, ClipboardList, Download, Pencil, Trash2 } from 'lucide-react';
+import {
+  useExams,
+  useExamResults,
+  useDeleteExam,
+  useDeleteExamResult,
+  Exam,
+} from '@/hooks/useExams';
 import { useStudents } from '@/hooks/useStudents';
 import ExamForm from '@/components/forms/ExamForm';
 import ExamResultsForm from '@/components/forms/ExamResultsForm';
 import { generateStudentReportCard, downloadPDF } from '@/lib/pdf-generator';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 const Exams = () => {
   const [isExamFormOpen, setIsExamFormOpen] = useState(false);
   const [isResultsFormOpen, setIsResultsFormOpen] = useState(false);
+  const [editingExam, setEditingExam] = useState<Exam | null>(null);
+  const [deleteExamId, setDeleteExamId] = useState<string | null>(null);
+  const [deleteResultId, setDeleteResultId] = useState<string | null>(null);
   const [selectedExam, setSelectedExam] = useState<Exam | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [departmentFilter, setDepartmentFilter] = useState<string>('all');
-  
+
   const { data: exams, isLoading: examsLoading } = useExams();
   const { data: examResults, isLoading: resultsLoading } = useExamResults(selectedExam?.id);
   const { data: students } = useStudents();
+  const deleteExam = useDeleteExam();
+  const deleteResult = useDeleteExamResult();
 
   const filteredExams = exams?.filter(exam => {
     const matchesSearch = exam.exam_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -42,34 +65,59 @@ const Exams = () => {
     setSelectedExam(exam);
   };
 
-  const handleDownloadReportCard = (studentId: string) => {
+  const handleEditExam = (exam: Exam) => {
+    setEditingExam(exam);
+    setIsExamFormOpen(true);
+  };
+
+  // Download a full report card aggregating ALL results for student in current academic year
+  const handleDownloadReportCard = async (studentId: string) => {
     const student = students?.find(s => s.id === studentId);
-    const studentResults = examResults?.filter(r => r.student_id === studentId) || [];
-    
-    if (student && studentResults.length > 0) {
-      const resultsData = studentResults.map(r => ({
-        subject: r.exam?.subject || '',
-        total_marks: r.exam?.total_marks || 100,
-        marks_obtained: r.marks_obtained,
-        grade: r.grade || 'N/A',
-      }));
-      
-      const pdf = generateStudentReportCard(
-        {
-          name: student.name,
-          student_id: student.student_id,
-          class_name: student.class_name,
-          department: student.department,
-          father_name: student.father_name || undefined,
-          mother_name: student.mother_name || undefined,
-        },
-        resultsData,
-        selectedExam?.exam_name || 'Exam',
-        selectedExam?.academic_year || new Date().getFullYear()
-      );
-      
-      downloadPDF(pdf, `report-card-${student.student_id}`);
+    if (!student) {
+      toast.error('ছাত্র পাওয়া যায়নি');
+      return;
     }
+    const year = selectedExam?.academic_year || new Date().getFullYear();
+
+    const { data, error } = await supabase
+      .from('exam_results')
+      .select('*, exam:exams(*)')
+      .eq('student_id', studentId);
+
+    if (error) {
+      toast.error('ফলাফল লোড করতে সমস্যা');
+      return;
+    }
+
+    const yearResults = (data || []).filter((r: any) => r.exam?.academic_year === year);
+    if (yearResults.length === 0) {
+      toast.error('এই ছাত্রের জন্য ফলাফল নেই');
+      return;
+    }
+
+    const resultsData = yearResults.map((r: any) => ({
+      subject: r.exam?.subject || '',
+      total_marks: r.exam?.total_marks || 100,
+      marks_obtained: r.marks_obtained,
+      grade: r.grade || 'N/A',
+    }));
+
+    const pdf = generateStudentReportCard(
+      {
+        name: student.name,
+        student_id: student.student_id,
+        class_name: student.class_name,
+        department: student.department,
+        father_name: student.father_name || undefined,
+        mother_name: student.mother_name || undefined,
+      },
+      resultsData,
+      selectedExam?.exam_name || `Annual ${year}`,
+      year
+    );
+
+    downloadPDF(pdf, `report-card-${student.student_id}-${year}`);
+    toast.success('রিপোর্ট কার্ড ডাউনলোড হয়েছে');
   };
 
   const getGradeBadgeVariant = (grade: string) => {
@@ -105,7 +153,7 @@ const Exams = () => {
             <h1 className="text-3xl font-bold">পরীক্ষা ব্যবস্থাপনা</h1>
             <p className="text-muted-foreground">পরীক্ষা, ফলাফল ও মার্কশিট পরিচালনা</p>
           </div>
-          <Button onClick={() => setIsExamFormOpen(true)}>
+          <Button onClick={() => { setEditingExam(null); setIsExamFormOpen(true); }}>
             <Plus className="mr-2 h-4 w-4" /> নতুন পরীক্ষা
           </Button>
         </div>
@@ -190,7 +238,7 @@ const Exams = () => {
 
             {/* Exams Table */}
             <Card>
-              <CardContent className="p-0">
+              <CardContent className="p-0 overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -217,20 +265,18 @@ const Exams = () => {
                         <TableCell>{exam.total_marks}</TableCell>
                         <TableCell>{exam.pass_marks}</TableCell>
                         <TableCell className="text-right">
-                          <div className="flex justify-end gap-2">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleAddResults(exam)}
-                            >
+                          <div className="flex justify-end gap-1 flex-wrap">
+                            <Button variant="outline" size="sm" onClick={() => handleAddResults(exam)}>
                               ফলাফল দিন
                             </Button>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleViewResults(exam)}
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => handleViewResults(exam)}>
                               দেখুন
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => handleEditExam(exam)} aria-label="সম্পাদনা">
+                              <Pencil className="h-4 w-4" />
+                            </Button>
+                            <Button variant="ghost" size="icon" onClick={() => setDeleteExamId(exam.id)} aria-label="মুছুন">
+                              <Trash2 className="h-4 w-4 text-destructive" />
                             </Button>
                           </div>
                         </TableCell>
@@ -267,6 +313,11 @@ const Exams = () => {
                   ))}
                 </SelectContent>
               </Select>
+              {selectedExam && (
+                <Button variant="outline" onClick={() => handleAddResults(selectedExam)}>
+                  <Pencil className="mr-2 h-4 w-4" /> ফলাফল সম্পাদনা
+                </Button>
+              )}
             </div>
 
             {selectedExam && (
@@ -274,7 +325,7 @@ const Exams = () => {
                 <CardHeader>
                   <CardTitle>{selectedExam.exam_name} - {selectedExam.subject}</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="overflow-x-auto">
                   {resultsLoading ? (
                     <div className="space-y-2">
                       {[1, 2, 3].map(i => <Skeleton key={i} className="h-12" />)}
@@ -297,7 +348,7 @@ const Exams = () => {
                             <TableCell>{result.student?.student_id}</TableCell>
                             <TableCell className="font-medium">{result.student?.name}</TableCell>
                             <TableCell>
-                              {result.is_absent ? 'অনুপস্থিত' : result.marks_obtained}
+                              {result.is_absent ? 'অনুপস্থিত' : `${result.marks_obtained}/${selectedExam.total_marks}`}
                             </TableCell>
                             <TableCell>
                               <Badge variant={getGradeBadgeVariant(result.grade || 'F')}>
@@ -306,13 +357,24 @@ const Exams = () => {
                             </TableCell>
                             <TableCell>{result.remarks || '-'}</TableCell>
                             <TableCell className="text-right">
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => handleDownloadReportCard(result.student_id)}
-                              >
-                                <Download className="h-4 w-4" />
-                              </Button>
+                              <div className="flex justify-end gap-1">
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => handleDownloadReportCard(result.student_id)}
+                                  aria-label="রিপোর্ট কার্ড"
+                                >
+                                  <Download className="h-4 w-4" />
+                                </Button>
+                                <Button
+                                  variant="ghost"
+                                  size="icon"
+                                  onClick={() => setDeleteResultId(result.id)}
+                                  aria-label="মুছুন"
+                                >
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </div>
                             </TableCell>
                           </TableRow>
                         ))}
@@ -336,10 +398,14 @@ const Exams = () => {
       {/* Forms */}
       <ExamForm
         open={isExamFormOpen}
-        onOpenChange={setIsExamFormOpen}
-        onSuccess={() => setIsExamFormOpen(false)}
+        onOpenChange={(open) => {
+          setIsExamFormOpen(open);
+          if (!open) setEditingExam(null);
+        }}
+        exam={editingExam}
+        onSuccess={() => { setIsExamFormOpen(false); setEditingExam(null); }}
       />
-      
+
       {selectedExam && (
         <ExamResultsForm
           open={isResultsFormOpen}
@@ -348,6 +414,55 @@ const Exams = () => {
           onSuccess={() => setIsResultsFormOpen(false)}
         />
       )}
+
+      {/* Delete Exam Confirmation */}
+      <AlertDialog open={!!deleteExamId} onOpenChange={(open) => !open && setDeleteExamId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>পরীক্ষা মুছবেন?</AlertDialogTitle>
+            <AlertDialogDescription>
+              এই পরীক্ষা ও সংশ্লিষ্ট সকল ফলাফল স্থায়ীভাবে মুছে যাবে।
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (deleteExamId) {
+                  await deleteExam.mutateAsync(deleteExamId);
+                  if (selectedExam?.id === deleteExamId) setSelectedExam(null);
+                  setDeleteExamId(null);
+                }
+              }}
+            >
+              মুছুন
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Result Confirmation */}
+      <AlertDialog open={!!deleteResultId} onOpenChange={(open) => !open && setDeleteResultId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>ফলাফল মুছবেন?</AlertDialogTitle>
+            <AlertDialogDescription>এই ছাত্রের ফলাফল মুছে যাবে।</AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>বাতিল</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={async () => {
+                if (deleteResultId) {
+                  await deleteResult.mutateAsync(deleteResultId);
+                  setDeleteResultId(null);
+                }
+              }}
+            >
+              মুছুন
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </DashboardLayout>
   );
 };
