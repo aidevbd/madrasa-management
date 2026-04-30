@@ -276,6 +276,7 @@ export default function Fees() {
                               <Download className="h-4 w-4" />
                             </Button>
                           </TableCell>
+                        </TableRow>
                       ))}
                     </TableBody>
                   </Table>
