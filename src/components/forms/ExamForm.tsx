@@ -132,7 +132,7 @@ const ExamForm = ({ open, onOpenChange, onSuccess, exam }: ExamFormProps) => {
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>নতুন পরীক্ষা যোগ করুন</DialogTitle>
+          <DialogTitle>{isEdit ? 'পরীক্ষা সম্পাদনা' : 'নতুন পরীক্ষা যোগ করুন'}</DialogTitle>
           <DialogDescription>
             পরীক্ষার তথ্য পূরণ করুন
           </DialogDescription>
