@@ -328,8 +328,8 @@ const ExamForm = ({ open, onOpenChange, onSuccess, exam }: ExamFormProps) => {
               <Button type="button" variant="outline" onClick={() => onOpenChange(false)}>
                 বাতিল
               </Button>
-              <Button type="submit" disabled={createExam.isPending}>
-                {createExam.isPending ? 'সংরক্ষণ হচ্ছে...' : 'সংরক্ষণ করুন'}
+              <Button type="submit" disabled={createExam.isPending || updateExam.isPending}>
+                {(createExam.isPending || updateExam.isPending) ? 'সংরক্ষণ হচ্ছে...' : (isEdit ? 'আপডেট করুন' : 'সংরক্ষণ করুন')}
               </Button>
             </div>
           </form>
