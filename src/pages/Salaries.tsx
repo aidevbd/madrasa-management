@@ -20,7 +20,8 @@ import { StatCard } from "@/components/StatCard";
 import { SalaryPaymentForm } from "@/components/forms/SalaryPaymentForm";
 import { useSalaryPayments, useSalaryStats } from "@/hooks/useSalaryPayments";
 import { useStaff } from "@/hooks/useStaff";
-import { DollarSign, Users, Calendar, AlertCircle } from "lucide-react";
+import { DollarSign, Users, Calendar, AlertCircle, Download } from "lucide-react";
+import { generateSalarySlip, downloadPDF } from "@/lib/pdf-generator";
 import { format } from "date-fns";
 import { Skeleton } from "@/components/ui/skeleton";
 
@@ -168,6 +169,7 @@ export default function Salaries() {
               <TableHead>প্রদানের তারিখ</TableHead>
               <TableHead>পদ্ধতি</TableHead>
               <TableHead>স্ট্যাটাস</TableHead>
+              <TableHead>একশন</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -203,11 +205,33 @@ export default function Salaries() {
                       {payment.status}
                     </span>
                   </TableCell>
+                  <TableCell>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => {
+                        const pdf = generateSalarySlip({
+                          payment_id: payment.payment_id,
+                          staff_name: payment.staff.name,
+                          staff_id: payment.staff.staff_id,
+                          designation: payment.staff.designation,
+                          month: payment.month,
+                          year: payment.year,
+                          amount: Number(payment.amount),
+                          payment_date: payment.payment_date,
+                          payment_method: payment.payment_method,
+                        });
+                        downloadPDF(pdf, `salary-slip-${payment.payment_id}`);
+                      }}
+                    >
+                      <Download className="h-4 w-4" />
+                    </Button>
+                  </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={9} className="text-center text-muted-foreground">
+                <TableCell colSpan={10} className="text-center text-muted-foreground">
                   কোন বেতন প্রদানের রেকর্ড পাওয়া যায়নি
                 </TableCell>
               </TableRow>
