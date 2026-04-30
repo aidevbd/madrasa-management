@@ -176,13 +176,16 @@ export const useAddExamResult = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (result: Omit<ExamResult, 'id' | 'created_at' | 'updated_at' | 'exam' | 'student'>) => {
-      // Calculate grade based on marks
-      const grade = calculateGrade(result.marks_obtained, 100); // Assuming 100 total marks
+    mutationFn: async (
+      result: Omit<ExamResult, 'id' | 'created_at' | 'updated_at' | 'exam' | 'student'> & { total_marks?: number }
+    ) => {
+      const total = result.total_marks ?? 100;
+      const grade = result.is_absent ? 'F' : calculateGrade(result.marks_obtained, total);
+      const { total_marks, ...rest } = result;
       
       const { data, error } = await supabase
         .from('exam_results')
-        .upsert({ ...result, grade }, { onConflict: 'exam_id,student_id' })
+        .upsert({ ...rest, grade }, { onConflict: 'exam_id,student_id' })
         .select()
         .single();
       
@@ -204,11 +207,17 @@ export const useBulkAddExamResults = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (results: Omit<ExamResult, 'id' | 'created_at' | 'updated_at' | 'exam' | 'student'>[]) => {
-      const resultsWithGrades = results.map(r => ({
-        ...r,
-        grade: r.is_absent ? 'F' : calculateGrade(r.marks_obtained, 100),
-      }));
+    mutationFn: async (
+      results: (Omit<ExamResult, 'id' | 'created_at' | 'updated_at' | 'exam' | 'student'> & { total_marks?: number })[]
+    ) => {
+      const resultsWithGrades = results.map(r => {
+        const total = r.total_marks ?? 100;
+        const { total_marks, ...rest } = r;
+        return {
+          ...rest,
+          grade: r.is_absent ? 'F' : calculateGrade(r.marks_obtained, total),
+        };
+      });
       
       const { data, error } = await supabase
         .from('exam_results')
@@ -224,6 +233,25 @@ export const useBulkAddExamResults = () => {
     },
     onError: (error: Error) => {
       toast.error(`ফলাফল সংরক্ষণ করতে সমস্যা: ${error.message}`);
+    },
+  });
+};
+
+// Delete exam result
+export const useDeleteExamResult = () => {
+  const queryClient = useQueryClient();
+  
+  return useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from('exam_results').delete().eq('id', id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['exam-results'] });
+      toast.success('ফলাফল মুছে ফেলা হয়েছে');
+    },
+    onError: (error: Error) => {
+      toast.error(`ফলাফল মুছতে সমস্যা: ${error.message}`);
     },
   });
 };
