@@ -11,7 +11,7 @@ import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { Download, User, Shield, Database, Users } from "lucide-react";
+import { Download, User, Shield, Database, Users, Link2, Trash2 } from "lucide-react";
 import { format } from "date-fns";
 
 interface UserWithRole {
@@ -25,6 +25,7 @@ const ROLES = [
   { value: "admin", label: "অ্যাডমিন", description: "সম্পূর্ণ অ্যাক্সেস" },
   { value: "teacher", label: "শিক্ষক", description: "শিক্ষার্থী, পরীক্ষা, উপস্থিতি" },
   { value: "accountant", label: "অ্যাকাউন্ট্যান্ট", description: "ফি, বেতন, খরচ" },
+  { value: "parent", label: "অভিভাবক", description: "নিজের সন্তানের তথ্য" },
   { value: "user", label: "সাধারণ ব্যবহারকারী", description: "শুধু দেখতে পারবেন" },
 ];
 
@@ -102,7 +103,7 @@ export default function Settings() {
       await supabase.from("user_roles").delete().eq("user_id", userId);
       const { error } = await supabase.from("user_roles").insert({
         user_id: userId,
-        role: role as "admin" | "teacher" | "accountant" | "user",
+        role: role as "admin" | "teacher" | "accountant" | "parent" | "user",
       });
       if (error) throw error;
     },
@@ -111,6 +112,67 @@ export default function Settings() {
       toast.success("ভূমিকা পরিবর্তন হয়েছে");
     },
     onError: () => toast.error("পরিবর্তন করতে সমস্যা হয়েছে"),
+  });
+
+  // Parent-Student links
+  const [linkParentId, setLinkParentId] = useState("");
+  const [linkStudentId, setLinkStudentId] = useState("");
+
+  const { data: parentLinks = [] } = useQuery({
+    queryKey: ["parent-links"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("parent_students")
+        .select("id, parent_user_id, student_id, students(name, student_id, class_name)")
+        .order("created_at", { ascending: false });
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const { data: allStudents = [] } = useQuery({
+    queryKey: ["all-students-min"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("students")
+        .select("id, name, student_id, class_name")
+        .order("name");
+      if (error) throw error;
+      return data;
+    },
+  });
+
+  const linkParentMutation = useMutation({
+    mutationFn: async () => {
+      if (!linkParentId || !linkStudentId) throw new Error("সব তথ্য দিন");
+      const { error } = await supabase.from("parent_students").insert({
+        parent_user_id: linkParentId,
+        student_id: linkStudentId,
+      });
+      if (error) throw error;
+      // Also ensure they have parent role
+      await supabase.from("user_roles").delete().eq("user_id", linkParentId);
+      await supabase.from("user_roles").insert({ user_id: linkParentId, role: "parent" });
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["parent-links"] });
+      queryClient.invalidateQueries({ queryKey: ["users-with-roles"] });
+      setLinkParentId("");
+      setLinkStudentId("");
+      toast.success("অভিভাবক সংযুক্ত হয়েছে");
+    },
+    onError: (e: Error) => toast.error(e.message || "সংযুক্ত করতে সমস্যা"),
+  });
+
+  const unlinkParentMutation = useMutation({
+    mutationFn: async (id: string) => {
+      const { error } = await supabase.from("parent_students").delete().eq("id", id);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["parent-links"] });
+      toast.success("সংযোগ মুছে ফেলা হয়েছে");
+    },
   });
 
   type TableName = "students" | "staff" | "attendance" | "fee_payments" | "salary_payments" | "expenses" | "transactions";
@@ -167,7 +229,7 @@ export default function Settings() {
       </div>
 
       <Tabs defaultValue="profile" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="profile" className="flex items-center gap-2">
             <User className="w-4 h-4" />
             <span className="hidden sm:inline">প্রোফাইল</span>
@@ -175,6 +237,10 @@ export default function Settings() {
           <TabsTrigger value="roles" className="flex items-center gap-2">
             <Shield className="w-4 h-4" />
             <span className="hidden sm:inline">ভূমিকা</span>
+          </TabsTrigger>
+          <TabsTrigger value="parents" className="flex items-center gap-2">
+            <Link2 className="w-4 h-4" />
+            <span className="hidden sm:inline">অভিভাবক</span>
           </TabsTrigger>
           <TabsTrigger value="backup" className="flex items-center gap-2">
             <Database className="w-4 h-4" />
@@ -303,6 +369,104 @@ export default function Settings() {
                   </Table>
                 </div>
               )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="parents" className="space-y-4">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Link2 className="w-5 h-5" />
+                অভিভাবক-ছাত্র সংযোগ
+              </CardTitle>
+              <CardDescription>
+                অভিভাবক অ্যাকাউন্টের সাথে তাদের সন্তানদের যুক্ত করুন। অভিভাবককে আগে সাইন আপ করতে হবে।
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <div className="grid gap-3 md:grid-cols-[1fr_1fr_auto] items-end">
+                <div className="space-y-2">
+                  <Label>অভিভাবক ব্যবহারকারী</Label>
+                  <Select value={linkParentId} onValueChange={setLinkParentId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="অভিভাবক নির্বাচন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {usersWithRoles.map((u) => (
+                        <SelectItem key={u.id} value={u.id}>
+                          {u.full_name} ({getRoleLabel(u.role)})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-2">
+                  <Label>ছাত্র</Label>
+                  <Select value={linkStudentId} onValueChange={setLinkStudentId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="ছাত্র নির্বাচন" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {allStudents.map((s) => (
+                        <SelectItem key={s.id} value={s.id}>
+                          {s.name} ({s.student_id} - {s.class_name})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <Button
+                  onClick={() => linkParentMutation.mutate()}
+                  disabled={linkParentMutation.isPending || !linkParentId || !linkStudentId}
+                >
+                  সংযুক্ত করুন
+                </Button>
+              </div>
+
+              <div className="rounded-md border overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>অভিভাবক</TableHead>
+                      <TableHead>ছাত্র</TableHead>
+                      <TableHead>আইডি</TableHead>
+                      <TableHead>শ্রেণি</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {parentLinks.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center text-muted-foreground">
+                          কোনো সংযোগ নেই
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      parentLinks.map((link: any) => {
+                        const parent = usersWithRoles.find((u) => u.id === link.parent_user_id);
+                        return (
+                          <TableRow key={link.id}>
+                            <TableCell>{parent?.full_name || link.parent_user_id.slice(0, 8)}</TableCell>
+                            <TableCell className="font-medium">{link.students?.name}</TableCell>
+                            <TableCell>{link.students?.student_id}</TableCell>
+                            <TableCell>{link.students?.class_name}</TableCell>
+                            <TableCell>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => unlinkParentMutation.mutate(link.id)}
+                              >
+                                <Trash2 className="w-4 h-4 text-destructive" />
+                              </Button>
+                            </TableCell>
+                          </TableRow>
+                        );
+                      })
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>

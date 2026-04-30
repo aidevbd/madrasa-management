@@ -2,7 +2,8 @@ import { useState } from "react";
 import { DashboardLayout } from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Plus, DollarSign, TrendingUp, Users } from "lucide-react";
+import { Plus, DollarSign, TrendingUp, Users, Download } from "lucide-react";
+import { generateFeeReceipt, downloadPDF } from "@/lib/pdf-generator";
 import {
   Dialog,
   DialogContent,
@@ -234,6 +235,7 @@ export default function Fees() {
                         <TableHead>পরিমাণ</TableHead>
                         <TableHead>মাধ্যম</TableHead>
                         <TableHead>রসিদ</TableHead>
+                        <TableHead>একশন</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -251,6 +253,29 @@ export default function Fees() {
                           </TableCell>
                           <TableCell>{payment.payment_method}</TableCell>
                           <TableCell>{payment.receipt_number || "-"}</TableCell>
+                          <TableCell>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                const pdf = generateFeeReceipt({
+                                  receipt_number: payment.receipt_number || payment.id.slice(0, 8),
+                                  student_name: payment.students?.name || "",
+                                  student_id: payment.students?.student_id || "",
+                                  class_name: payment.students?.class_name || "",
+                                  fee_type: payment.fee_structures?.fee_type || "",
+                                  amount: Number(payment.amount),
+                                  payment_date: payment.payment_date,
+                                  payment_method: payment.payment_method,
+                                  month: payment.month,
+                                  year: payment.year,
+                                });
+                                downloadPDF(pdf, `receipt-${payment.receipt_number || payment.id.slice(0, 8)}`);
+                              }}
+                            >
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>

@@ -1,6 +1,7 @@
 import { SidebarProvider, SidebarTrigger, SidebarInset } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
-import { Bell, LogOut, Settings as SettingsIcon } from "lucide-react";
+import { LogOut, Settings as SettingsIcon } from "lucide-react";
+import { NotificationBell } from "./NotificationBell";
 import { Button } from "./ui/button";
 import { useAuth } from "@/hooks/useAuth";
 import { useNavigate } from "react-router-dom";
@@ -34,16 +35,7 @@ export function DashboardLayout({ children }: DashboardLayoutProps) {
           <header className="sticky top-0 z-10 flex h-14 md:h-16 items-center gap-2 md:gap-4 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-3 md:px-4">
             <SidebarTrigger />
             <div className="flex-1" />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="relative h-9 w-9 md:h-10 md:w-10"
-              onClick={() => navigate('/notices')}
-              aria-label="নোটিফিকেশন"
-            >
-              <Bell className="w-4 h-4 md:w-5 md:h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-destructive rounded-full" />
-            </Button>
+            <NotificationBell />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" className="h-9 w-9 md:h-10 md:w-10 rounded-full p-0" aria-label="অ্যাকাউন্ট মেনু">

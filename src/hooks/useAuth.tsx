@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -53,7 +53,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (error) throw error;
       
       toast.success('সফলভাবে লগইন হয়েছে');
-      navigate('/');
+
+      // Check if user is a parent → redirect to portal
+      if (data.user) {
+        const { data: roles } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', data.user.id);
+        const isParent = roles?.some((r) => r.role === 'parent');
+        navigate(isParent ? '/parent-portal' : '/');
+      } else {
+        navigate('/');
+      }
     } catch (error: any) {
       toast.error(error.message || 'লগইন করতে সমস্যা হয়েছে');
       throw error;
