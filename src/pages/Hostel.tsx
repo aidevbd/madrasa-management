@@ -498,6 +498,7 @@ export default function Hostel() {
                   ))}
                 </TableBody>
               </Table>
+              </div>
             </CardContent>
           </Card>
         </TabsContent>
