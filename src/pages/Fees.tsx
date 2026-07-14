@@ -56,12 +56,12 @@ export default function Fees() {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex justify-between items-center">
+        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
           <div>
-            <h1 className="text-3xl font-bold">ফি ব্যবস্থাপনা</h1>
-            <p className="text-muted-foreground">ছাত্রদের ফি স্ট্রাকচার ও পেমেন্ট পরিচালনা করুন</p>
+            <h1 className="text-2xl md:text-3xl font-bold">ফি ব্যবস্থাপনা</h1>
+            <p className="text-muted-foreground text-sm md:text-base">ছাত্রদের ফি স্ট্রাকচার ও পেমেন্ট পরিচালনা করুন</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-col sm:flex-row gap-2 w-full sm:w-auto">
             <Dialog open={structureDialogOpen} onOpenChange={setStructureDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
