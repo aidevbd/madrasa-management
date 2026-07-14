@@ -228,6 +228,7 @@ export default function Fees() {
                 {paymentsLoading ? (
                   <p>লোড হচ্ছে...</p>
                 ) : (
+                  <div className="rounded-md border overflow-x-auto">
                   <Table>
                     <TableHeader>
                       <TableRow>
