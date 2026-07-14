@@ -283,6 +283,7 @@ export default function Fees() {
                       ))}
                     </TableBody>
                   </Table>
+                  </div>
                 )}
               </CardContent>
             </Card>
