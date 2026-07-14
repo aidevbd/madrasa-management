@@ -84,7 +84,7 @@ export default function Reports() {
                     color: "hsl(var(--primary))",
                   },
                 }}
-                className="h-[300px] w-full aspect-auto"
+                className="h-[300px] w-full !aspect-auto"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={reportsData.monthlyTrends}>
@@ -134,7 +134,7 @@ export default function Reports() {
                     color: "hsl(var(--primary))",
                   },
                 }}
-                className="h-[300px] w-full aspect-auto"
+                className="h-[300px] w-full !aspect-auto"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={reportsData.feeCollection}>
@@ -168,7 +168,7 @@ export default function Reports() {
                     color: "hsl(var(--accent))",
                   },
                 }}
-                className="h-[300px] w-full aspect-auto"
+                className="h-[300px] w-full !aspect-auto"
               >
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={reportsData.salaryPayments}>
